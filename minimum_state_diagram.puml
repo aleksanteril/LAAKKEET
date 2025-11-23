@@ -4,17 +4,17 @@
 STANDBY : eEnter / reset_machine_struct(&m);
 STANDBY : eTick / led_toggle();
 STANDBY : eExit / led_off();
-STANDBY --> CHECK_CALIBRATION : eKey(SW0) / calibrate();
+STANDBY --> CHECK_CALIBRATION : eKey(SW0) /
 
 
 note "- struct Machine, jossa pill_count, \n sun muut yleiset tiedot stateille. \n \n - Olkoon 1 tick aluksi 50ms." as N1
 note left of STANDBY : When the dispenser is started \n it waits for a button to be pressed \n and blinks an LED while waiting.
 
-CHECK_CALIBRATION : eEnter /
-CHECK_CALIBRATION : eTick / check_calib();
+CHECK_CALIBRATION : eEnter / calibrate();
+CHECK_CALIBRATION : eTick / 
 CHECK_CALIBRATION : eExit /
-CHECK_CALIBRATION --> STANDBY : eTick [calibrated == false] /
-CHECK_CALIBRATION --> CALIBRATED : eTick [calibrated == true] /
+CHECK_CALIBRATION --> STANDBY : eTick [m->calibrated == false] /
+CHECK_CALIBRATION --> CALIBRATED : eTick [m->calibrated == true] /
 
 note left of CHECK_CALIBRATION : When the button is pressed the dispenser \n is calibrated by turning the wheel \n at least one full turn and then stopping \n the wheel so that the compartment with \n the sensor opening is aligned with the drop tube.
 
@@ -27,8 +27,8 @@ note left of CALIBRATED : After calibration the program keeps \n the LED on unti
 
 DISPENSE_WAIT : eEnter / timer = 0;
 DISPENSE_WAIT : eTick / ++timer;
-DISPENSE_WAIT : eExit / ++pill_count;
-DISPENSE_WAIT --> DISPENSE_PILL : eTick [timer >= 600] / dispense();
+DISPENSE_WAIT : eExit / 
+DISPENSE_WAIT --> DISPENSE_PILL : eTick [timer >= 600] / \n++pill_count, dispense();
 DISPENSE_WAIT --> STANDBY : eEnter [m->pill_count >= 7] /
 
 note left of DISPENSE_WAIT : Then it dispenses pills every \n 30 seconds starting from the button press.
