@@ -20,12 +20,23 @@ void check_buttons()
                 queue_try_add(&event_q, &e_add);
 }
 
+static void piezo_irq(uint gpio, uint32_t event_mask)
+{
+        Events_t e_add = ePiezo;
+        queue_try_add(&event_q, &e_add);
+}
+
 int main() 
 {
         // Init pins here!
         setup_gpio(LED_D1_PIN, GPIO_OUT);
         setup_gpio(SW0_PIN, GPIO_IN);
         setup_gpio(SW1_PIN, GPIO_IN);
+        setup_gpio(PIEZO_SW_PIN, GPIO_IN);
+
+        /* Init irq routine */
+        gpio_set_irq_enabled_with_callback(PIEZO_SW_PIN, GPIO_IRQ_EDGE_FALL, true, piezo_irq);
+
 
         // Init queue
         queue_init(&event_q, sizeof(Events_t), QUEUE_SIZE);
@@ -38,6 +49,7 @@ int main()
         // Start machine here
         while (true)
         {
+                // Poll buttons
                 check_buttons();
 
                 // Run state machine here

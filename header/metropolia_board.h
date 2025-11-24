@@ -23,6 +23,9 @@
 #define IN3 3
 #define IN4 2
 
+/* PIEZO DROP PRESSURE PLATE */
+#define PIEZO_SW_PIN 27
+
 /* STEPPER OPTICAL SENSOR */
 #define OPT_SW_PIN 28
 
