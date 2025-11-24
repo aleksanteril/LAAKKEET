@@ -16,6 +16,7 @@ int main()
         // Start machine here
         while (true) {
                 // Run state machine here
-                mn.state(&mn, e)
+                mn.state(&mn, e);
+                sleep_ms(50);
         }
 }
