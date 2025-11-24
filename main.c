@@ -1,26 +1,21 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
+#include "states.h"
 
-int main() {
 
-    const uint led_pin = 22;
-    uint count = 0;
 
-    // Initialize LED pin
-    gpio_init(led_pin);
-    gpio_set_dir(led_pin, GPIO_OUT);
+int main() 
+{
 
-    // Initialize chosen serial port
-    stdio_init_all();
+        // Init pins here!
 
-    // Loop forever
-    while (true) {
+        // Init machine here!
+        Machine_t mn = { standby, 0 };
+        Events_t e = NOP; // Näitä eventtejä sit haetaan tohon state machineen queue kautta
 
-        // Blink LED
-        printf("Blinking! %u\r\n", ++count);
-        gpio_put(led_pin, true);
-        sleep_ms(1000);
-        gpio_put(led_pin, false);
-        sleep_ms(1000);
-    }
+        // Start machine here
+        while (true) {
+                // Run state machine here
+                machine.state(&machine, e)
+        }
 }
