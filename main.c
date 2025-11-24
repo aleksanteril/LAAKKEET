@@ -16,6 +16,6 @@ int main()
         // Start machine here
         while (true) {
                 // Run state machine here
-                machine.state(&machine, e)
+                mn.state(&mn, e)
         }
 }
