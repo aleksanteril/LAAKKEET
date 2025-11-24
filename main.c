@@ -11,7 +11,7 @@ int main()
 
         // Init machine here!
         Machine_t mn = { standby, 0 };
-        Events_t e = NOP; // Näitä eventtejä sit haetaan tohon state machineen queue kautta
+        Events_t e = NOP; // Näitä eventtejä sit haetaan tohon state machineen queue tai jonkun kautta
 
         // Start machine here
         while (true) {

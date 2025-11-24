@@ -4,7 +4,7 @@
 STANDBY : eEnter / reset_machine_struct(&m);
 STANDBY : eTick / led_toggle();
 STANDBY : eExit / led_off();
-STANDBY --> CHECK_CALIBRATION : eKey(SW0) /
+STANDBY --> CHECK_CALIBRATION : eSW0 /
 
 
 note "- struct Machine, jossa pill_count, \n sun muut yleiset tiedot stateille. \n \n - Olkoon 1 tick aluksi 50ms." as N1
@@ -21,7 +21,7 @@ note left of CHECK_CALIBRATION : When the button is pressed the dispenser \n is 
 CALIBRATED : eEnter / led_on();
 CALIBRATED : eTick /
 CALIBRATED : eExit / led_off();
-CALIBRATED --> DISPENSE_WAIT : eKey(SW1) /
+CALIBRATED --> DISPENSE_WAIT : eSW1 /
 
 note left of CALIBRATED : After calibration the program keeps \n the LED on until user presses another button.
 
@@ -37,7 +37,7 @@ note right of DISPENSE_WAIT : When all pills have been dispensed \n (wheel turne
 DISPENSE_PILL : eEnter / timer = 0;
 DISPENSE_PILL : eTick / ++timer;
 DISPENSE_PILL : eExit /
-DISPENSE_PILL --> DISPENSE_WAIT : eKey(PIEZO_SENS) / 
+DISPENSE_PILL --> DISPENSE_WAIT : ePiezo / 
 DISPENSE_PILL --> DISPENSE_FAIL : eTick [timer >= 4] /
 
 note left of DISPENSE_PILL : When the wheel is turned, \n the piezo sensor is used to detect \n if a pill was dispensed or not.
