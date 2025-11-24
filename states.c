@@ -10,7 +10,7 @@ static void change_state(Machine_t *m, state next_state)
         m->state(m, eEnter);
 }
 
-void standby (Machine_t* m, Events_t e)
+void standby(Machine_t* m, Events_t e)
 {
         switch(e)
         {
@@ -28,7 +28,7 @@ void standby (Machine_t* m, Events_t e)
         }
 }
 
-void check_calibration (Machine_t* m, Events_t e)
+void check_calibration(Machine_t* m, Events_t e)
 {
         switch(e)
         {
