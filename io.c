@@ -1,10 +1,5 @@
-#include "states.h"
-#include "metropolia_board.h"
-
-void reset_machine(Machine_t* m)
-{
-        m->pill_count = 0;
-}
+#include "pico/stdlib.h"
+#include "io.h"
 
 void led_off(uint pin)
 {
@@ -20,7 +15,6 @@ void led_toggle(uint pin)
 {
         gpio_put(pin, !gpio_get(pin));
 }
-
 
 void setup_gpio(uint pin, bool out)
 {
@@ -56,19 +50,6 @@ bool is_falling_edge(uint pin)
 bool pressed(uint pin)
 {
         bool normal = gpio_is_pulled_up(pin);
-        if(gpio_get(pin) == normal)
-                return false;
-        sleep_ms(5);
         return gpio_get(pin) != normal;
-}
-
-/* Only registers from releasing the button, a small pulse of true! */
-bool released(uint pin)
-{
-        bool normal = gpio_is_pulled_up(pin);
-        if(gpio_get(pin) == normal)
-                return false;
-        sleep_ms(5);
-        return normal ? gpio_get(pin) : !gpio_get(pin);
 }
 

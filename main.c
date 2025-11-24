@@ -1,22 +1,49 @@
-#include <stdio.h>
+#include "metropolia_board.h"
 #include "pico/stdlib.h"
 #include "states.h"
+#include "io.h"
+#include "pico/util/queue.h"
 
+#define QUEUE_SIZE 30
 
+/* Event queue used in this MAIN_C */
+static queue_t event_q;
+
+void check_buttons()
+{
+        Events_t e_add = NOP;
+        if (pressed(SW0_PIN))
+                e_add = eSW0;
+        else if (pressed(SW1_PIN))
+                e_add = eSW1;
+        if (e_add != NOP)
+                queue_try_add(&event_q, &e_add);
+}
 
 int main() 
 {
-
         // Init pins here!
+        setup_gpio(LED_D1_PIN, GPIO_OUT);
+        setup_gpio(SW0_PIN, GPIO_IN);
+        setup_gpio(SW1_PIN, GPIO_IN);
+
+        // Init queue
+        queue_init(&event_q, sizeof(Events_t), QUEUE_SIZE);
+        Events_t e;
 
         // Init machine here!
-        Machine_t mn = { standby, 0 };
-        Events_t e = NOP; // Näitä eventtejä sit haetaan tohon state machineen queue tai jonkun kautta
+        Machine_t mn;
+        init_sm(&mn, standby);
 
         // Start machine here
-        while (true) {
+        while (true)
+        {
+                check_buttons();
+
                 // Run state machine here
-                mn.state(&mn, e);
+                while(queue_try_remove(&event_q, &e))
+                        mn.state(&mn, e);
+                mn.state(&mn, eTick);
                 sleep_ms(50);
         }
 }
