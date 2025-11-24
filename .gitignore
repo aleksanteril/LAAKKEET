@@ -3,3 +3,7 @@
 
 # CMake
 cmake-build-*/
+*/.idea/
+.gitignore
+*/cmake-build-debug/
+*/build/
