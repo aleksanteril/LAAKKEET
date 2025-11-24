@@ -21,6 +21,8 @@ add_compile_options(-Wall
         -Wno-maybe-uninitialized
 )
 
+include_directories(./header)
+
 # Tell CMake where to find the executable source file
 add_executable(${PROJECT_NAME} 
     main.c
