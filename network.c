@@ -10,7 +10,7 @@
 
 // Join routine commands
 #define CMD_MODE "AT+MODE=LWOTAA\r\n"
-#define CMD_KEY "AT+KEY=APPKEY,\"734ff565033a3af65bef1520bbdc1e99\"\n"
+#define CMD_KEY "AT+KEY=APPKEY,\"" APP_KEY "\"\r\n"
 #define CMD_CLASS "AT+CLASS=A\r\n"
 #define CMD_PORT "AT+PORT=8\r\n"
 #define CMD_JOIN "AT+JOIN\r\n"
@@ -29,6 +29,7 @@
 #define MED_TIMEOUT_MS 5000
 #define LONG_TIMEOUT_MS 15000
 #define MAX_RES 64
+#define PAYLOAD_SIZE 128
 #define ROUTINE_LEN 4
 
 static bool network_join_routine(uart_t* uart);
@@ -44,12 +45,12 @@ bool join_lora_network(uart_t* uart)
                 uart_puts(uart->inst, CMD_TEST_COMMS);
 
                 char result[MAX_RES];
-                if (uart_read_str(uart, result, MAX_RES, TIMEOUT_MS))
+                if(uart_read_str(uart, result, MAX_RES, TIMEOUT_MS))
                 {
                         if(!strcmp(result, MODULE_OK))
                         {
                                 printf("PICO: Connected to LoRa module.\r\n");
-                                if (network_join_routine(uart))
+                                if(network_join_routine(uart))
                                         return true;
                         }
                 }
@@ -68,7 +69,7 @@ static bool network_join_routine(uart_t* uart)
         for(int i = 0; i < ROUTINE_LEN; ++i)
         {
                 uart_puts(uart->inst, cmds_seq[i]);
-                if (!uart_read_str(uart, result, MAX_RES, TIMEOUT_MS))
+                if(!uart_read_str(uart, result, MAX_RES, TIMEOUT_MS))
                         return false;
                 printf("%s", result);
         }
@@ -78,7 +79,7 @@ static bool network_join_routine(uart_t* uart)
 
         while(strcmp(result, JOIN_DONE))
         {
-                if (!uart_read_str(uart, result, MAX_RES, LONG_TIMEOUT_MS))
+                if(!uart_read_str(uart, result, MAX_RES, LONG_TIMEOUT_MS))
                         break; //TIMEOUT NO BYTES, COMM DOWN?
 
                 printf("%s", result);
@@ -94,24 +95,25 @@ uint32_t time_s_32()
 }
 
 
-void send_msg(uart_t* uart, char* format, ...)
+void send_msg(uart_t* uart, char* msg)
 {
-        if(!is_online)
+        if(!is_online || msg == NULL)
                 return; //Silent fail if offline
 
-        // TODO: Here needs to be a check before making format string for msg len
+        char payload[PAYLOAD_SIZE];
+        int count = snprintf(payload, PAYLOAD_SIZE, "AT+MSG=\"%u: %s\"\r\n", time_s_32(), msg);
+        if(count < 0)
+        {
+                printf("Error formatting MSG.\r\n");
+                return;  
+        }
+        else if(count >= PAYLOAD_SIZE)
+        {
+                printf("MSG Didn't fit, not sending.\r\n");
+                return;
+        }
 
-        char frmt_msg[64];
-        va_list argptr;
-        va_start(argptr, format);
-        vsprintf(frmt_msg, format, argptr);
-        va_end(argptr);
-
-
-        char payload[128];
-        sprintf(payload, "AT+MSG=\"%d: %s\"\r\n", time_s_32(), frmt_msg);
         uart_puts(uart->inst, payload);
-
         printf("%s", payload);
 
         char result[MAX_RES] = {};
