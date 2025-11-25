@@ -44,6 +44,10 @@ int main()
         queue_init(&event_q, sizeof(Events_t), QUEUE_SIZE);
         Events_t e;
 
+        // Init Lora comm through UART
+        uart_t* uart = init_uart_routine(1, 9600);
+        join_lora_network(uart);
+
         // Init machine here!
         Machine_t mn;
         init_sm(&mn, standby);

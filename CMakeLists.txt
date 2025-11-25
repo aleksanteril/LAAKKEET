@@ -28,6 +28,8 @@ add_executable(${PROJECT_NAME}
         main.c
         states.c
         io.c
+        network.c
+        uart.c
 )
 
 # Create map/bin/hex/uf2 files
