@@ -1,0 +1,138 @@
+#include <math.h>
+#include <stdio.h>
+#include "hardware/gpio.h"
+#include "pico/time.h"
+
+//Pins
+#define OPTO_F 28
+#define IN1 2
+#define IN2 3
+#define IN3 6
+#define IN4 13
+
+#define COIL1 0
+#define COIL2 1
+#define COIL3 2
+#define COIL4 3
+
+//
+#define CALIB_SAMPLE_SIZE 3.0
+#define BLOCKS 8.0
+#define COILS 4
+#define STEPS 8
+
+//Different 0 and 1
+#define NO 0
+#define YES 1
+#define OFF 0
+#define ON 1
+
+//Values for calculating the steps
+#define CALIB_SAMPLE_SIZE 3.0
+#define BLOCKS 8.0
+#define COILS 4
+#define STEPS 8
+
+
+void one_step(int step) {
+    int pins[COILS] = {IN1, IN2, IN3, IN4};
+    int cycle[STEPS][COILS] = {
+        {ON, OFF, OFF, OFF},
+        {ON, ON, OFF, OFF},
+        {OFF, ON, OFF, OFF},
+        {OFF, ON, ON, OFF},
+        {OFF, OFF, ON, OFF},
+        {OFF, OFF, ON, ON},
+        {OFF, OFF, OFF, ON},
+        {ON, OFF, OFF, ON}
+    };
+
+    gpio_put(pins[COIL1], cycle[step][COIL1]);
+    gpio_put(pins[COIL2], cycle[step][COIL2]);
+    gpio_put(pins[COIL3], cycle[step][COIL3]);
+    gpio_put(pins[COIL4], cycle[step][COIL4]);
+    sleep_ms(3);
+}
+
+void step_checker(int *step) {
+    if (*step == STEPS) {
+        *step = 0;
+    }
+}
+
+int limit_switch_check() {
+    if (!gpio_get(OPTO_F)) {
+        return YES;
+    }else {
+        return NO;
+    }
+}
+
+int calibrate_position(int step, int *steps_in_revolution) {
+    int revolutions = -1;
+    double steps_total = 0;
+    double average_steps_revolution = 0;
+    double steps_total_gaps = 0;
+    double average_steps_gap = 0;
+    double steps_left = 0;
+    int in_gap = NO;
+    double steps_in_block = 0;
+
+    //Find the first rising edge
+    printf("Calibrating...\n");
+    while (revolutions == -1) {
+        step_checker(&step);
+        one_step(step);
+        if (limit_switch_check() == YES && in_gap == NO) {
+            in_gap = YES;
+        }else if (in_gap == YES) {
+            if (limit_switch_check() == NO) {
+                in_gap = NO;
+                revolutions++;
+            }
+        }
+        step ++;
+    }
+    steps_total++;
+
+    //Start the calibration after finding the first rising edge
+    while (revolutions < CALIB_SAMPLE_SIZE) {
+        step_checker(&step);
+        one_step(step);
+        if (in_gap == NO) {
+            if (limit_switch_check() == YES) {
+                in_gap = YES;
+                steps_total_gaps++;
+            }
+        }else if (in_gap == YES) {
+            if (limit_switch_check() == NO) {
+                in_gap = NO;
+                revolutions++;
+            }else {
+                steps_total_gaps++;
+            }
+        }
+        if (revolutions < CALIB_SAMPLE_SIZE) {
+            steps_total++;
+        }
+        step++;
+    }
+
+    average_steps_revolution = steps_total / CALIB_SAMPLE_SIZE;
+
+    steps_in_block = average_steps_revolution / BLOCKS;
+    average_steps_gap = steps_total_gaps / CALIB_SAMPLE_SIZE;
+
+    //Device "starts seeing" the gap x steps too late and "stops seeing" the gap x steps too early.
+    //Subtracting x from full blocks steps the wheel turns in a correct position
+    steps_left = steps_in_block - average_steps_gap/2;
+    for (int i = 0; i < round(steps_left); i++) {
+        step_checker(&step);
+        one_step(step);
+        step++;
+    }
+    *steps_in_revolution = (int)round(average_steps_revolution);
+    printf("Calibration completed successfully!\n");
+    printf("-----------------------------------\n");
+    return step;
+}
