@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "metropolia_board.h"
 #include "pico/stdlib.h"
 #include "states.h"
@@ -28,6 +29,8 @@ static void piezo_irq(uint gpio, uint32_t event_mask)
 
 int main() 
 {
+        stdio_init_all();
+
         // Init pins here!
         setup_gpio(LED_D1_PIN, GPIO_OUT);
         setup_gpio(SW0_PIN, GPIO_IN);
@@ -37,7 +40,6 @@ int main()
         /* Init irq routine */
         gpio_set_irq_enabled_with_callback(PIEZO_SW_PIN, GPIO_IRQ_EDGE_FALL, true, piezo_irq);
 
-
         // Init queue
         queue_init(&event_q, sizeof(Events_t), QUEUE_SIZE);
         Events_t e;
@@ -46,6 +48,7 @@ int main()
         Machine_t mn;
         init_sm(&mn, standby);
 
+        printf("Boot up\r\n");
         // Start machine here
         while (true)
         {
@@ -59,3 +62,23 @@ int main()
                 sleep_ms(50);
         }
 }
+
+#define DEBUG
+
+#ifdef DEBUG
+void dispense(Machine_t* m)
+{
+        printf("Dispensing pill turn %d.\r\n", m->turn_count);
+        sleep_ms(5000);
+        printf("Pill dispensed.\r\n");
+}
+
+void calibrate(Machine_t* m)
+{
+        printf("Calibrating machine.\r\n");
+        sleep_ms(5000);
+        m->calibrated = true;
+        printf("Machine calibrated.\r\n");
+}
+
+#endif
