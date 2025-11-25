@@ -4,6 +4,9 @@
 #include "metropolia_board.h"
 #include "io.h"
 
+#define DISPENSE_TICKS (DISPENSE_INTERVAL*1000/TICK_SLEEP)
+#define DISPENSE_FAIL_TICKS (TIME_TO_DISPENSE_FAIL/TICK_SLEEP)
+
 void init_sm(Machine_t *m, state init_state)
 {
         m->state = init_state;
@@ -105,7 +108,7 @@ void dispense_wait(Machine_t* m, Events_t e)
         case eExit:
                 break;
         case eTick:
-                if(++m->timer >= 100)
+                if(++m->timer >= DISPENSE_TICKS)
                 {
                         ++m->turn_count;
                         change_state(m, dispense_pill);
@@ -125,7 +128,7 @@ void dispense_pill(Machine_t* m, Events_t e)
         case eExit:
                 break;
         case eTick:
-                if(++m->timer >= 4)
+                if(++m->timer >= DISPENSE_FAIL_TICKS)
                         change_state(m, dispense_fail);
                 break;
         case ePiezo:

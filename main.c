@@ -59,12 +59,11 @@ int main()
                 while(queue_try_remove(&event_q, &e))
                         mn.state(&mn, e);
                 mn.state(&mn, eTick);
-                sleep_ms(50);
+                sleep_ms(TICK_SLEEP);
         }
 }
 
 #define DEBUG
-
 #ifdef DEBUG
 void dispense(Machine_t* m)
 {
@@ -80,5 +79,4 @@ void calibrate(Machine_t* m)
         m->calibrated = true;
         printf("Machine calibrated.\r\n");
 }
-
 #endif

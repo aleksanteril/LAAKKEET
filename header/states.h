@@ -3,6 +3,14 @@
 
 #include "pico/types.h"
 
+// Time between eTick events in (ms) milliseconds
+#define TICK_SLEEP 50
+// Time to determine dispense fail a.k.a no piezo event detected until this time. (ms) milliseconds
+#define TIME_TO_DISPENSE_FAIL 200
+
+// Time of wait between dispensing the medicine in (s) seconds
+#define DISPENSE_INTERVAL 30
+
 typedef enum Events_t {
         eEnter,
         eExit,
