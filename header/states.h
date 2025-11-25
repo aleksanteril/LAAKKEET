@@ -3,6 +3,14 @@
 
 #include "pico/types.h"
 
+// Time between eTick events in (ms) milliseconds
+#define TICK_SLEEP 50
+// Time to determine dispense fail a.k.a no piezo event detected until this time. (ms) milliseconds
+#define TIME_TO_DISPENSE_FAIL 200
+
+// Time of wait between dispensing the medicine in (s) seconds
+#define DISPENSE_INTERVAL 30
+
 typedef enum Events_t {
         eEnter,
         eExit,
@@ -19,6 +27,8 @@ typedef struct Machine_t {
         state state;
         uint8_t pill_count;
         uint32_t timer;
+        bool calibrated;
+        uint8_t turn_count;
 } Machine_t;
 
 void init_sm(Machine_t *m, state init_state);
@@ -26,5 +36,12 @@ void init_sm(Machine_t *m, state init_state);
 /* STATES FUNKTIOT*/
 void standby (Machine_t* m, Events_t e);
 void check_calibration (Machine_t* m, Events_t e);
+void calibrated (Machine_t* m, Events_t e);
+void dispense_wait (Machine_t* m, Events_t e);
+void dispense_pill (Machine_t* m, Events_t e);
+void dispense_fail (Machine_t* m, Events_t e);
+
+void calibrate(Machine_t* m);
+void dispense(Machine_t* m);
 
 #endif
