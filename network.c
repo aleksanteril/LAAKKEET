@@ -3,7 +3,7 @@
 #include <string.h>
 #include "network.h"
 
-
+// Module testing commands
 #define CMD_TEST_COMMS "AT\r\n"
 #define CMD_READ_FW "AT+VER\r\n"
 #define CMD_READ_DEVEUI "AT+ID=DevEui\r\n"
@@ -15,14 +15,24 @@
 #define CMD_PORT "AT+PORT=8\r\n"
 #define CMD_JOIN "AT+JOIN\r\n"
 
-//#define CMD_SEND_MSG "+MSG=\"text message\"\r\n"
+// Send MSG when joined
+#define CMD_SEND_MSG "AT+MSG=\"%s\"\r\n"
+
+// JOIN AND MSG CONFIRM MSGS
+#define MSG_DONE "+MSG: Done\r\n"
+#define JOIN_DONE "+JOIN: Done\r\n"
+#define JOIN_CONFIRM_PREFIX "+JOIN: NetID"
+#define MODULE_OK "+AT: OK\r\n"
 
 #define MAX_TRIES 5
-#define TIMEOUT_MS 5000
-#define MAX_RES 40
-#define ROUTINE_LEN 5
+#define TIMEOUT_MS 1000
+#define MED_TIMEOUT_MS 5000
+#define LONG_TIMEOUT_MS 15000
+#define MAX_RES 64
+#define ROUTINE_LEN 4
 
 static bool network_join_routine(uart_t* uart);
+static bool is_online = false;
 
 bool join_lora_network(uart_t* uart)
 {
@@ -36,8 +46,7 @@ bool join_lora_network(uart_t* uart)
                 char result[MAX_RES];
                 if (uart_read_str(uart, result, MAX_RES, TIMEOUT_MS))
                 {
-                        /* if Good response, set state to next and early return */
-                        if(!strcmp(result, "+AT: OK\r\n"))
+                        if(!strcmp(result, MODULE_OK))
                         {
                                 printf("PICO: Connected to LoRa module.\r\n");
                                 if (network_join_routine(uart))
@@ -52,16 +61,67 @@ bool join_lora_network(uart_t* uart)
 
 static bool network_join_routine(uart_t* uart)
 {
-        char* cmds_seq[ROUTINE_LEN] = {CMD_MODE, CMD_KEY, CMD_CLASS, CMD_PORT, CMD_JOIN};
+        char* cmds_seq[ROUTINE_LEN] = {CMD_MODE, CMD_KEY, CMD_CLASS, CMD_PORT};
+        char result[MAX_RES] = {};
 
+        //Setup AT module with the commands
         for(int i = 0; i < ROUTINE_LEN; ++i)
         {
                 uart_puts(uart->inst, cmds_seq[i]);
-                char result[MAX_RES];
-                if (uart_read_str(uart, result, MAX_RES, TIMEOUT_MS))
-                        printf("%s", result);
-                else
+                if (!uart_read_str(uart, result, MAX_RES, TIMEOUT_MS))
                         return false;
+                printf("%s", result);
         }
-        return true;
+
+        //Send JOIN msg, and wait upto 15s
+        uart_puts(uart->inst, CMD_JOIN);
+
+        while(strcmp(result, JOIN_DONE))
+        {
+                if (!uart_read_str(uart, result, MAX_RES, LONG_TIMEOUT_MS))
+                        break; //TIMEOUT NO BYTES, COMM DOWN?
+
+                printf("%s", result);
+                if(strstr(result, JOIN_CONFIRM_PREFIX))
+                        is_online = true;
+        }
+        return is_online;
+}
+
+uint32_t time_s_32()
+{
+        return time_us_64() / 1000000;
+}
+
+
+void send_msg(uart_t* uart, char* format, ...)
+{
+        if(!is_online)
+                return; //Silent fail if offline
+
+        // TODO: Here needs to be a check before making format string for msg len
+
+        char frmt_msg[64];
+        va_list argptr;
+        va_start(argptr, format);
+        vsprintf(frmt_msg, format, argptr);
+        va_end(argptr);
+
+
+        char payload[128];
+        sprintf(payload, "AT+MSG=\"%d: %s\"\r\n", time_s_32(), frmt_msg);
+        uart_puts(uart->inst, payload);
+
+        printf("%s", payload);
+
+        char result[MAX_RES] = {};
+        while(strcmp(result, MSG_DONE))
+        {
+                if (!uart_read_str(uart, result, MAX_RES, MED_TIMEOUT_MS))
+                {
+                        is_online = false;
+                        break; //TIMEOUT NO BYTES, COMM DOWN?
+                }
+                printf("%s", result);
+        }
 }

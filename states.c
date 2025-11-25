@@ -83,6 +83,7 @@ void calibrated(Machine_t* m, Events_t e)
         switch(e)
         {
         case eEnter:
+                send_msg(m->uart, "CALIBRATED");
                 led_on(LED_D1_PIN);
                 break;
         case eExit:
@@ -91,6 +92,7 @@ void calibrated(Machine_t* m, Events_t e)
         case eTick:
                 break;
         case eSW1:
+                send_msg(m->uart, "Dispenser START");
                 change_state(m, dispense_wait);
                 break;
         }
@@ -102,7 +104,10 @@ void dispense_wait(Machine_t* m, Events_t e)
         {
         case eEnter:
                 if(m->turn_count >= 7)
+                {
+                        send_msg(m->uart, "Dispenser EMPTY");
                         change_state(m, standby);
+                }
                 m->timer = 0;
                 break;
         case eExit:
@@ -133,6 +138,7 @@ void dispense_pill(Machine_t* m, Events_t e)
                 break;
         case ePiezo:
                 ++m->pill_count;
+                send_msg(m->uart, "Dispense OK");
                 change_state(m, dispense_wait);
                 break;
         }
@@ -143,6 +149,7 @@ void dispense_fail(Machine_t* m, Events_t e)
         switch(e)
         {
         case eEnter:
+                send_msg(m->uart, "Dispense FAIL");
                 m->timer = 0;
                 break;
         case eExit:
