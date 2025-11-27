@@ -7,7 +7,7 @@
 /* Turn motor with specific step count, blocking */
 void turn_motor_8th(Machine_t* m, int n);
 void turn_motor_full_rot(Machine_t* m);
-void calibrate_motor(Machine_t* m);
+void calibrate(Machine_t* m);
 
 //void dispense(Machine_t* m);
 
