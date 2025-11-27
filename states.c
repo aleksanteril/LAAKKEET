@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "metropolia_board.h"
 #include "io.h"
+#include "pico/time.h"
 
 #define DISPENSE_TICKS (DISPENSE_INTERVAL*1000/TICK_SLEEP)
 #define DISPENSE_FAIL_TICKS (TIME_TO_DISPENSE_FAIL/TICK_SLEEP)
@@ -100,9 +101,11 @@ void calibrated(Machine_t* m, Events_t e)
 
 void dispense_wait(Machine_t* m, Events_t e)
 {
+        static absolute_time_t time;
         switch(e)
         {
         case eEnter:
+                time = make_timeout_time_ms(DISPENSE_INTERVAL*1000);
                 if(!online())
                         join_lora_network(m->uart, 2);
                 if(m->turn_count >= 7)
@@ -115,7 +118,8 @@ void dispense_wait(Machine_t* m, Events_t e)
         case eExit:
                 break;
         case eTick:
-                if(++m->timer >= DISPENSE_TICKS)
+                //if(++m->timer >= DISPENSE_TICKS)
+                if(time_reached(time))
                 {
                         ++m->turn_count;
                         change_state(m, dispense_pill);
