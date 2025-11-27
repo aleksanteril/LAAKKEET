@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "metropolia_board.h"
 #include "io.h"
+#include "pico/time.h"
 #include "motor.h"
 
 #define DISPENSE_TICKS (DISPENSE_INTERVAL*1000/TICK_SLEEP)
@@ -87,6 +88,7 @@ void calibrated(Machine_t* m, Events_t e)
         {
         case eEnter:
                 printf("Calibrated with %u steps per dispense.\r\n", m->steps_dispense);
+                send_msg(m->uart, "CALIBRATED");
                 led_on(LED_D1_PIN);
                 break;
         case eExit:
@@ -95,6 +97,7 @@ void calibrated(Machine_t* m, Events_t e)
         case eTick:
                 break;
         case eSW1:
+                send_msg(m->uart, "Dispenser START");
                 change_state(m, dispense_wait);
                 break;
         }
@@ -102,17 +105,25 @@ void calibrated(Machine_t* m, Events_t e)
 
 void dispense_wait(Machine_t* m, Events_t e)
 {
+        static absolute_time_t time;
         switch(e)
         {
         case eEnter:
+                time = make_timeout_time_ms(DISPENSE_INTERVAL*1000);
+                if(!online())
+                        join_lora_network(m->uart, 2);
                 if(m->turn_count >= 7)
+                {
+                        send_msg(m->uart, "Dispenser EMPTY");
                         change_state(m, standby);
+                }
                 m->timer = 0;
                 break;
         case eExit:
                 break;
         case eTick:
-                if(++m->timer >= DISPENSE_TICKS)
+                //if(++m->timer >= DISPENSE_TICKS)
+                if(time_reached(time))
                 {
                         ++m->turn_count;
                         change_state(m, dispense_pill);
@@ -137,6 +148,7 @@ void dispense_pill(Machine_t* m, Events_t e)
                 break;
         case ePiezo:
                 ++m->pill_count;
+                send_msg(m->uart, "Dispense OK");
                 change_state(m, dispense_wait);
                 break;
         }
@@ -147,6 +159,7 @@ void dispense_fail(Machine_t* m, Events_t e)
         switch(e)
         {
         case eEnter:
+                send_msg(m->uart, "Dispense FAIL");
                 m->timer = 0;
                 break;
         case eExit:
@@ -155,7 +168,7 @@ void dispense_fail(Machine_t* m, Events_t e)
         case eTick:
                 if(++m->timer % 20 == 0)
                         led_toggle(LED_D1_PIN);
-                if(m->timer >= 200)
+                else if(m->timer >= 200)
                         change_state(m, dispense_wait);
                 break;
         }
