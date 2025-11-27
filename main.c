@@ -71,12 +71,4 @@ void dispense(Machine_t* m)
         sleep_ms(5000);
         printf("Pill dispensed.\r\n");
 }
-
-void calibrate(Machine_t* m)
-{
-        printf("Calibrating machine.\r\n");
-        sleep_ms(5000);
-        m->calibrated = true;
-        printf("Machine calibrated.\r\n");
-}
 #endif

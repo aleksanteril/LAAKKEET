@@ -29,6 +29,8 @@ typedef struct Machine_t {
         uint32_t timer;
         bool calibrated;
         uint8_t turn_count;
+        int step_cycle; //The step of the cycle the coils currently are
+        int step_in_revolution;
 } Machine_t;
 
 void init_sm(Machine_t *m, state init_state);
@@ -41,7 +43,6 @@ void dispense_wait (Machine_t* m, Events_t e);
 void dispense_pill (Machine_t* m, Events_t e);
 void dispense_fail (Machine_t* m, Events_t e);
 
-void calibrate(Machine_t* m);
 void dispense(Machine_t* m);
 
 #endif

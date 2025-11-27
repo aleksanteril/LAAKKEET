@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "metropolia_board.h"
 #include "io.h"
+#include "motor.h"
 
 #define DISPENSE_TICKS (DISPENSE_INTERVAL*1000/TICK_SLEEP)
 #define DISPENSE_FAIL_TICKS (TIME_TO_DISPENSE_FAIL/TICK_SLEEP)

@@ -28,6 +28,7 @@ add_executable(${PROJECT_NAME}
         main.c
         states.c
         io.c
+        motor.c
 )
 
 # Create map/bin/hex/uf2 files
