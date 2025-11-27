@@ -37,6 +37,13 @@ int main()
         setup_gpio(SW1_PIN, GPIO_IN);
         setup_gpio(PIEZO_SW_PIN, GPIO_IN);
 
+        //Init motor pins
+        setup_gpio(IN1, GPIO_OUT);
+        setup_gpio(IN2, GPIO_OUT);
+        setup_gpio(IN3, GPIO_OUT);
+        setup_gpio(IN4, GPIO_OUT);
+        setup_gpio(OPT_SW_PIN, GPIO_IN);
+
         /* Init irq routine */
         gpio_set_irq_enabled_with_callback(PIEZO_SW_PIN, GPIO_IRQ_EDGE_FALL, true, piezo_irq);
 
