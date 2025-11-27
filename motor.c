@@ -2,7 +2,6 @@
 #include "motor.h"
 #include "io.h"
 #include <math.h>
-#include <stdio.h>
 
 #include "hardware/gpio.h"
 #include "pico/time.h"
@@ -54,16 +53,6 @@ static int turn_until_opt_fall(Machine_t* m)
         return i;
 }
 
-/* n = how many 1/8th revolutions */
-static void turn_motor_8th(Machine_t* m, int n)
-{
-        for (int i = 0; i < m->steps_per_turn*n; ++i)
-        {
-                sleep_us(SLEEP_BETWEEN);
-                drive_pins(m);
-        }
-}
-
 void calibrate(Machine_t* m)
 {
         /* Initial orientation */
@@ -90,5 +79,14 @@ void calibrate(Machine_t* m)
         }
 
         m->calibrated = true;
-        m->steps_per_turn = steps / TURNS;
+        m->steps_dispense = (steps/TURNS)/WHOLE_TURN;
+}
+
+void dispense(Machine_t* m)
+{
+        for (int i = 0; i < m->steps_dispense; ++i)
+        {
+                sleep_us(SLEEP_BETWEEN);
+                drive_pins(m);
+        }
 }

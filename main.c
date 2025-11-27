@@ -55,7 +55,7 @@ int main()
         Machine_t mn;
         init_sm(&mn, standby);
 
-        printf("Boot up\r\n");
+        printf("Boot up.\r\n");
         // Start machine here
         while (true)
         {
@@ -69,13 +69,3 @@ int main()
                 sleep_ms(TICK_SLEEP);
         }
 }
-
-#define DEBUG
-#ifdef DEBUG
-void dispense(Machine_t* m)
-{
-        printf("Dispensing pill turn %d.\r\n", m->turn_count);
-        sleep_ms(5000);
-        printf("Pill dispensed.\r\n");
-}
-#endif

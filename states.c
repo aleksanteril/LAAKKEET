@@ -72,6 +72,8 @@ void check_calibration(Machine_t* m, Events_t e)
                 calibrate(m);
                 break;
         case eExit:
+                if(!m->calibrated)
+                        printf("Calibration failed.\r\n");
                 break;
         case eTick:
                 change_state(m, m->calibrated ? calibrated : standby);
@@ -84,6 +86,7 @@ void calibrated(Machine_t* m, Events_t e)
         switch(e)
         {
         case eEnter:
+                printf("Calibrated with %u steps per dispense.\r\n", m->steps_dispense);
                 led_on(LED_D1_PIN);
                 break;
         case eExit:
