@@ -32,34 +32,20 @@
 #define ROUTINE_LEN 4
 
 static bool network_join_routine(uart_t* uart);
+static bool module_alive(uart_t* uart);
+static void setup_module(uart_t* uart);
 static bool is_online = false;
 
-bool join_lora_network(uart_t* uart, uint tries)
+static bool module_alive(uart_t* uart)
 {
-        printf("PICO: Trying to connect to LoRa ...\r\n");
-
-        for(uint i = 0; i < tries; ++i)
-        {
-                printf("PICO: Try to connect %d times ... \r\n", i+1);
-                uart_puts(uart->inst, CMD_TEST_COMMS);
-
-                char result[MAX_RES];
-                if(uart_read_str(uart, result, MAX_RES, TIMEOUT_MS))
-                {
-                        if(!strcmp(result, MODULE_OK))
-                        {
-                                printf("PICO: Connected to LoRa module.\r\n");
-                                if(network_join_routine(uart))
-                                        return true;
-                        }
-                }
-        }
-        /* Fail if break loop on i cond */
-        printf("PICO: LORA Module not responding.\r\n");
-        return false;
+        char result[MAX_RES];
+        uart_puts(uart->inst, CMD_TEST_COMMS);
+        if(!uart_read_str(uart, result, MAX_RES, TIMEOUT_MS))
+                return false;
+        return (!strcmp(result, MODULE_OK));
 }
 
-static bool network_join_routine(uart_t* uart)
+static void setup_module(uart_t* uart)
 {
         char* cmds_seq[ROUTINE_LEN] = {CMD_MODE, CMD_KEY, CMD_CLASS, CMD_PORT};
         char result[MAX_RES] = {};
@@ -68,15 +54,53 @@ static bool network_join_routine(uart_t* uart)
         for(int i = 0; i < ROUTINE_LEN; ++i)
         {
                 uart_puts(uart->inst, cmds_seq[i]);
-                if(!uart_read_str(uart, result, MAX_RES, TIMEOUT_MS))
-                        return false;
-                printf("%s", result);
+                if(uart_read_str(uart, result, MAX_RES, TIMEOUT_MS))
+                        printf("%s", result);
+        }
+}
+
+bool join_lora_network(uart_t* uart, uint tries)
+{
+        printf("PICO: Trying to setup LoRa module ...\r\n");
+        uint i = 0;
+        for(; i < tries; ++i)
+        {
+                printf("PICO: Try to connect %d times ... \r\n", i+1);
+                if(module_alive(uart))
+                {
+                        setup_module(uart);
+                        printf("PICO: Connected to LoRa module.\r\n");
+                        break;
+                }
+        }
+        if(i == tries) //If broke on failing to setup module
+        {
+                printf("PICO: LORA Module not responding.\r\n");
+                return false;
         }
 
+        //Continue to try to connect to network
+        printf("PICO: Trying to connect to LoRa network ...\r\n");
+        for(i = 0; i < tries; ++i)
+        {
+                printf("PICO: Try to connect %d times ... \r\n", i+1);
+                if (network_join_routine(uart))
+                        break;
+        }
+        if(!is_online)
+        {
+                printf("PICO: LORA Network not responding.\r\n");
+        }
+        return is_online;
+}
+
+static bool network_join_routine(uart_t* uart)
+{
         //Send JOIN msg, and wait upto 15s
         uart_puts(uart->inst, CMD_JOIN);
 
         //This loop could take up to 15 seconds if timeoutted
+        char result[MAX_RES] = {};
         while(strcmp(result, JOIN_DONE))
         {
                 if(!uart_read_str(uart, result, MAX_RES, LONG_TIMEOUT_MS))
@@ -89,16 +113,16 @@ static bool network_join_routine(uart_t* uart)
         return is_online;
 }
 
-static uint32_t time_s_32()
-{
-        return time_us_64() / 1000000;
-}
-
-
 void send_msg(uart_t* uart, char* msg)
 {
         if(!is_online || msg == NULL)
-                return; //Silent fail if offline
+                return; //Silent fail/ignore if offline
+
+        if(!module_alive(uart)) //If module has stopped working
+        {
+                is_online = false;
+                return;
+        }
 
         char payload[PAYLOAD_SIZE];
         //int count = snprintf(payload, PAYLOAD_SIZE, "AT+MSG=\"%u: %s\"\r\n", time_s_32(), msg);
