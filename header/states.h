@@ -1,6 +1,7 @@
 #ifndef STATES_H
 #define STATES_H
 
+#include "network.h"
 #include "pico/types.h"
 
 // Time between eTick events in (ms) milliseconds
@@ -29,6 +30,7 @@ typedef struct Machine_t {
         uint32_t timer;
         bool calibrated;
         uint8_t turn_count;
+        uart_t* uart;
 } Machine_t;
 
 void init_sm(Machine_t *m, state init_state);

@@ -1,0 +1,160 @@
+#include "pico/stdlib.h"
+#include <stdio.h>
+#include <string.h>
+#include "network.h"
+
+// Module testing commands
+#define CMD_TEST_COMMS "AT\r\n"
+#define CMD_READ_FW "AT+VER\r\n"
+#define CMD_READ_DEVEUI "AT+ID=DevEui\r\n"
+
+// Join routine commands
+#define CMD_MODE "AT+MODE=LWOTAA\r\n"
+#define CMD_KEY "AT+KEY=APPKEY,\"" APP_KEY "\"\r\n"
+#define CMD_CLASS "AT+CLASS=A\r\n"
+#define CMD_PORT "AT+PORT=8\r\n"
+#define CMD_JOIN "AT+JOIN\r\n"
+
+// Send MSG when joined
+#define CMD_SEND_MSG "AT+MSG=\"%s\"\r\n"
+
+// JOIN AND MSG CONFIRM MSGS
+#define MSG_DONE "+MSG: Done\r\n"
+#define JOIN_DONE "+JOIN: Done\r\n"
+#define JOIN_CONFIRM_PREFIX "+JOIN: NetID"
+#define MODULE_OK "+AT: OK\r\n"
+
+#define TIMEOUT_MS 1000
+#define MED_TIMEOUT_MS 5000
+#define LONG_TIMEOUT_MS 15000
+#define MAX_RES 64
+#define PAYLOAD_SIZE 128
+#define ROUTINE_LEN 4
+
+static bool network_join_routine(uart_t* uart);
+static bool module_alive(uart_t* uart);
+static void setup_module(uart_t* uart);
+static bool is_online = false;
+
+static bool module_alive(uart_t* uart)
+{
+        char result[MAX_RES];
+        uart_puts(uart->inst, CMD_TEST_COMMS);
+        if(!uart_read_str(uart, result, MAX_RES, TIMEOUT_MS))
+                return false;
+        return (!strcmp(result, MODULE_OK));
+}
+
+static void setup_module(uart_t* uart)
+{
+        char* cmds_seq[ROUTINE_LEN] = {CMD_MODE, CMD_KEY, CMD_CLASS, CMD_PORT};
+        char result[MAX_RES] = {};
+
+        //Setup AT module with the commands
+        for(int i = 0; i < ROUTINE_LEN; ++i)
+        {
+                uart_puts(uart->inst, cmds_seq[i]);
+                if(uart_read_str(uart, result, MAX_RES, TIMEOUT_MS))
+                        printf("%s", result);
+        }
+}
+
+bool join_lora_network(uart_t* uart, uint tries)
+{
+        printf("PICO: Trying to setup LoRa module ...\r\n");
+        uint i = 0;
+        for(; i < tries; ++i)
+        {
+                printf("PICO: Try to connect %d times ... \r\n", i+1);
+                if(module_alive(uart))
+                {
+                        setup_module(uart);
+                        printf("PICO: Connected to LoRa module.\r\n");
+                        break;
+                }
+        }
+        if(i == tries) //If broke on failing to setup module
+        {
+                printf("PICO: LORA Module not responding.\r\n");
+                return false;
+        }
+
+        //Continue to try to connect to network
+        printf("PICO: Trying to connect to LoRa network ...\r\n");
+        for(i = 0; i < tries; ++i)
+        {
+                printf("PICO: Try to connect %d times ... \r\n", i+1);
+                if (network_join_routine(uart))
+                        break;
+        }
+        if(!is_online)
+        {
+                printf("PICO: LORA Network not responding.\r\n");
+        }
+        return is_online;
+}
+
+static bool network_join_routine(uart_t* uart)
+{
+        //Send JOIN msg, and wait upto 15s
+        uart_puts(uart->inst, CMD_JOIN);
+
+        //This loop could take up to 15 seconds if timeoutted
+        char result[MAX_RES] = {};
+        while(strcmp(result, JOIN_DONE))
+        {
+                if(!uart_read_str(uart, result, MAX_RES, LONG_TIMEOUT_MS))
+                        break; //TIMEOUT NO BYTES, COMM DOWN?
+
+                printf("%s", result);
+                if(strstr(result, JOIN_CONFIRM_PREFIX))
+                        is_online = true;
+        }
+        return is_online;
+}
+
+void send_msg(uart_t* uart, char* msg)
+{
+        if(!is_online || msg == NULL)
+                return; //Silent fail/ignore if offline
+
+        if(!module_alive(uart)) //If module has stopped working
+        {
+                is_online = false;
+                return;
+        }
+
+        char payload[PAYLOAD_SIZE];
+        //int count = snprintf(payload, PAYLOAD_SIZE, "AT+MSG=\"%u: %s\"\r\n", time_s_32(), msg);
+        int count = snprintf(payload, PAYLOAD_SIZE, "AT+MSG=\"%s\"\r\n", msg);
+        if(count < 0)
+        {
+                printf("Error formatting MSG.\r\n");
+                return;  
+        }
+        else if(count >= PAYLOAD_SIZE)
+        {
+                printf("MSG Didn't fit, not sending.\r\n");
+                return;
+        }
+
+        uart_puts(uart->inst, payload);
+        printf("%s", payload);
+
+        char result[MAX_RES] = {};
+        while(strcmp(result, MSG_DONE)) //Max 5 seconds if timeoutted
+        {
+                if (!uart_read_str(uart, result, MAX_RES, MED_TIMEOUT_MS))
+                {
+                        is_online = false;
+                        break; //TIMEOUT NO BYTES, COMM DOWN?
+                }
+                printf("%s", result);
+        }
+}
+
+//Getter for the static flag
+bool online()
+{
+        return is_online;
+}

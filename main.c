@@ -44,11 +44,18 @@ int main()
         queue_init(&event_q, sizeof(Events_t), QUEUE_SIZE);
         Events_t e;
 
+        // Init Lora comm through UART
+        uart_t* uart = init_uart_routine(1, 9600);
+
         // Init machine here!
-        Machine_t mn;
+        Machine_t mn = { .uart = uart };
+        join_lora_network(mn.uart, 5);
         init_sm(&mn, standby);
 
-        printf("Boot up\r\n");
+        //Boot msg to LORA and UART
+        printf("PICO: Boot up\r\n");
+        send_msg(mn.uart, "Boot");
+
         // Start machine here
         while (true)
         {
