@@ -7,6 +7,7 @@
 #include "pico/time.h"
 
 #define SLEEP_BETWEEN 3000
+#define OFFSET_CORR 144
 #define TIMEOUT_TURN 16000
 #define WHOLE_TURN 8
 #define TURNS 1
@@ -71,8 +72,8 @@ void calibrate(Machine_t* m)
                 steps += result;
         }
 
-        //Drive the motor to the middle of the hole, from the edge 128 steps
-        for(int i = 0; i < 144; ++i)
+        //Drive the motor to the middle of the hole, from the edge 144 steps
+        for(int i = 0; i < OFFSET_CORR; ++i)
         {
                 sleep_us(SLEEP_BETWEEN);
                 drive_pins(m);
