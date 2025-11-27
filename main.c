@@ -49,7 +49,7 @@ int main()
 
         // Init machine here!
         Machine_t mn = { .uart = uart };
-        join_lora_network(mn.uart);
+        join_lora_network(mn.uart, 5);
         init_sm(&mn, standby);
 
         //Boot msg to LORA and UART

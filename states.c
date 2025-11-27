@@ -103,6 +103,8 @@ void dispense_wait(Machine_t* m, Events_t e)
         switch(e)
         {
         case eEnter:
+                if(!online())
+                        join_lora_network(m->uart, 2);
                 if(m->turn_count >= 7)
                 {
                         send_msg(m->uart, "Dispenser EMPTY");
@@ -158,7 +160,7 @@ void dispense_fail(Machine_t* m, Events_t e)
         case eTick:
                 if(++m->timer % 20 == 0)
                         led_toggle(LED_D1_PIN);
-                if(m->timer >= 200)
+                else if(m->timer >= 200)
                         change_state(m, dispense_wait);
                 break;
         }

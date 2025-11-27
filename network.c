@@ -24,7 +24,6 @@
 #define JOIN_CONFIRM_PREFIX "+JOIN: NetID"
 #define MODULE_OK "+AT: OK\r\n"
 
-#define MAX_TRIES 5
 #define TIMEOUT_MS 1000
 #define MED_TIMEOUT_MS 5000
 #define LONG_TIMEOUT_MS 15000
@@ -35,11 +34,11 @@
 static bool network_join_routine(uart_t* uart);
 static bool is_online = false;
 
-bool join_lora_network(uart_t* uart)
+bool join_lora_network(uart_t* uart, uint tries)
 {
         printf("PICO: Trying to connect to LoRa ...\r\n");
 
-        for(int i = 0; i < MAX_TRIES; ++i)
+        for(uint i = 0; i < tries; ++i)
         {
                 printf("PICO: Try to connect %d times ... \r\n", i+1);
                 uart_puts(uart->inst, CMD_TEST_COMMS);
@@ -77,6 +76,7 @@ static bool network_join_routine(uart_t* uart)
         //Send JOIN msg, and wait upto 15s
         uart_puts(uart->inst, CMD_JOIN);
 
+        //This loop could take up to 15 seconds if timeoutted
         while(strcmp(result, JOIN_DONE))
         {
                 if(!uart_read_str(uart, result, MAX_RES, LONG_TIMEOUT_MS))
@@ -89,7 +89,7 @@ static bool network_join_routine(uart_t* uart)
         return is_online;
 }
 
-uint32_t time_s_32()
+static uint32_t time_s_32()
 {
         return time_us_64() / 1000000;
 }
@@ -101,7 +101,8 @@ void send_msg(uart_t* uart, char* msg)
                 return; //Silent fail if offline
 
         char payload[PAYLOAD_SIZE];
-        int count = snprintf(payload, PAYLOAD_SIZE, "AT+MSG=\"%u: %s\"\r\n", time_s_32(), msg);
+        //int count = snprintf(payload, PAYLOAD_SIZE, "AT+MSG=\"%u: %s\"\r\n", time_s_32(), msg);
+        int count = snprintf(payload, PAYLOAD_SIZE, "AT+MSG=\"%s\"\r\n", msg);
         if(count < 0)
         {
                 printf("Error formatting MSG.\r\n");
@@ -117,7 +118,7 @@ void send_msg(uart_t* uart, char* msg)
         printf("%s", payload);
 
         char result[MAX_RES] = {};
-        while(strcmp(result, MSG_DONE))
+        while(strcmp(result, MSG_DONE)) //Max 5 seconds if timeoutted
         {
                 if (!uart_read_str(uart, result, MAX_RES, MED_TIMEOUT_MS))
                 {
@@ -126,4 +127,10 @@ void send_msg(uart_t* uart, char* msg)
                 }
                 printf("%s", result);
         }
+}
+
+//Getter for the static flag
+bool online()
+{
+        return is_online;
 }
