@@ -8,7 +8,6 @@
 #define TICK_SLEEP 50
 // Time to determine dispense fail a.k.a no piezo event detected until this time. (ms) milliseconds
 #define TIME_TO_DISPENSE_FAIL 200
-
 // Time of wait between dispensing the medicine in (s) seconds
 #define DISPENSE_INTERVAL 30
 
@@ -30,6 +29,8 @@ typedef struct Machine_t {
         uint32_t timer;
         bool calibrated;
         uint8_t turn_count;
+        uint step;
+        uint steps_dispense;
         uart_t* uart;
 } Machine_t;
 
@@ -42,8 +43,5 @@ void calibrated (Machine_t* m, Events_t e);
 void dispense_wait (Machine_t* m, Events_t e);
 void dispense_pill (Machine_t* m, Events_t e);
 void dispense_fail (Machine_t* m, Events_t e);
-
-void calibrate(Machine_t* m);
-void dispense(Machine_t* m);
 
 #endif

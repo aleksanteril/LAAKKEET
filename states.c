@@ -4,6 +4,7 @@
 #include "metropolia_board.h"
 #include "io.h"
 #include "pico/time.h"
+#include "motor.h"
 
 #define DISPENSE_TICKS (DISPENSE_INTERVAL*1000/TICK_SLEEP)
 #define DISPENSE_FAIL_TICKS (TIME_TO_DISPENSE_FAIL/TICK_SLEEP)
@@ -72,6 +73,8 @@ void check_calibration(Machine_t* m, Events_t e)
                 calibrate(m);
                 break;
         case eExit:
+                if(!m->calibrated)
+                        printf("Calibration failed.\r\n");
                 break;
         case eTick:
                 change_state(m, m->calibrated ? calibrated : standby);
@@ -84,6 +87,7 @@ void calibrated(Machine_t* m, Events_t e)
         switch(e)
         {
         case eEnter:
+                printf("Calibrated with %u steps per dispense.\r\n", m->steps_dispense);
                 send_msg(m->uart, "CALIBRATED");
                 led_on(LED_D1_PIN);
                 break;

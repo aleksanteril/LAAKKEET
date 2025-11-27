@@ -37,6 +37,13 @@ int main()
         setup_gpio(SW1_PIN, GPIO_IN);
         setup_gpio(PIEZO_SW_PIN, GPIO_IN);
 
+        //Init motor pins
+        setup_gpio(IN1, GPIO_OUT);
+        setup_gpio(IN2, GPIO_OUT);
+        setup_gpio(IN3, GPIO_OUT);
+        setup_gpio(IN4, GPIO_OUT);
+        setup_gpio(OPT_SW_PIN, GPIO_IN);
+
         /* Init irq routine */
         gpio_set_irq_enabled_with_callback(PIEZO_SW_PIN, GPIO_IRQ_EDGE_FALL, true, piezo_irq);
 
@@ -69,21 +76,3 @@ int main()
                 sleep_ms(TICK_SLEEP);
         }
 }
-
-#define DEBUG
-#ifdef DEBUG
-void dispense(Machine_t* m)
-{
-        printf("Dispensing pill turn %d.\r\n", m->turn_count);
-        sleep_ms(5000);
-        printf("Pill dispensed.\r\n");
-}
-
-void calibrate(Machine_t* m)
-{
-        printf("Calibrating machine.\r\n");
-        sleep_ms(5000);
-        m->calibrated = true;
-        printf("Machine calibrated.\r\n");
-}
-#endif
