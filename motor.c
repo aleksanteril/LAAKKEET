@@ -2,12 +2,16 @@
 #include "motor.h"
 #include "io.h"
 #include <math.h>
+#include <stdio.h>
+
 #include "hardware/gpio.h"
 #include "pico/time.h"
 
 #define SLEEP_BETWEEN 3000
+#define TIMEOUT_TURN 16000
 #define WHOLE_TURN 8
 #define TURNS 1
+#define TIMEOUT_ERR (-1)
 
 static void drive_pins(Machine_t* m)
 {
@@ -33,13 +37,17 @@ static void drive_pins(Machine_t* m)
         gpio_put(IN4, hf_step_m[m->step][3]);
 }
 
-static uint turn_until_opt_fall(Machine_t* m)
+static int turn_until_opt_fall(Machine_t* m)
 {
         set_prev_state(gpio_get(OPT_SW_PIN));
+        absolute_time_t time;
+        time = make_timeout_time_ms(TIMEOUT_TURN);
 
-        uint i = 0;
+        int i = 0;
         for (; !is_falling_edge(OPT_SW_PIN); ++i)
         {
+                if(time_reached(time))
+                        return TIMEOUT_ERR; //TIMEOUT on turn
                 sleep_us(SLEEP_BETWEEN);
                 drive_pins(m);
         }
@@ -47,7 +55,7 @@ static uint turn_until_opt_fall(Machine_t* m)
 }
 
 /* n = how many 1/8th revolutions */
-void turn_motor_8th(Machine_t* m, int n)
+static void turn_motor_8th(Machine_t* m, int n)
 {
         for (int i = 0; i < m->steps_per_turn*n; ++i)
         {
@@ -64,10 +72,18 @@ void calibrate(Machine_t* m)
         /* Calc average */
         uint steps = 0;
         for (int i = 0; i < TURNS; ++i)
-                steps += turn_until_opt_fall(m);
+        {
+                int result = turn_until_opt_fall(m);
+                if(result == TIMEOUT_ERR)
+                {
+                        m->calibrated = false;
+                        return;
+                }
+                steps += result;
+        }
 
         //Drive the motor to the middle of the hole, from the edge 128 steps
-        for(int i = 0; i < 128; ++i)
+        for(int i = 0; i < 144; ++i)
         {
                 sleep_us(SLEEP_BETWEEN);
                 drive_pins(m);
