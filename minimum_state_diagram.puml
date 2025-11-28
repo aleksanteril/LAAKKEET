@@ -2,7 +2,8 @@
 
 [*] --> STANDBY
 STANDBY : eEnter / reset_machine(m), timer = 0;
-STANDBY : eTick / led_toggle(); send_msg(EMPTY) [timer>=600];
+STANDBY : eTick [timer % 20 = 0] / led_toggle(); 
+STANDBY : eTick [timer>=600] / send_msg(EMPTY), timer = 0;
 STANDBY : eExit / led_off();
 STANDBY --> CHECK_CALIBRATION : eSW0 /
 
@@ -13,8 +14,8 @@ note left of STANDBY : When the dispenser is started \n it waits for a button to
 CHECK_CALIBRATION : eEnter / calibrate();
 CHECK_CALIBRATION : eTick / 
 CHECK_CALIBRATION : eExit /
-CHECK_CALIBRATION --> STANDBY : eTick [m->calibrated == false] /
-CHECK_CALIBRATION --> CALIBRATED : eTick [m->calibrated == true] /
+CHECK_CALIBRATION --> STANDBY : eTick [calibrated = false] /
+CHECK_CALIBRATION --> CALIBRATED : eTick [calibrated = true] /
 
 note left of CHECK_CALIBRATION : When the button is pressed the dispenser \n is calibrated by turning the wheel \n at least one full turn and then stopping \n the wheel so that the compartment with \n the sensor opening is aligned with the drop tube.
 
@@ -25,11 +26,12 @@ CALIBRATED --> DISPENSE_WAIT : eSW1 / send_msg(DISP_START)
 
 note left of CALIBRATED : After calibration the program keeps \n the LED on until user presses another button.
 
-DISPENSE_WAIT : eEnter / make_timeout_stamp(); send_msg(STATUS);
+DISPENSE_WAIT : eEnter / make_timeout_stamp(); 
+DISPENSE_WAIT : eEnter [RETRY TWICE!] / send_msg(STATUS);
 DISPENSE_WAIT : eTick / 
 DISPENSE_WAIT : eExit / 
 DISPENSE_WAIT --> DISPENSE_PILL : eTick [time_reached(TIMEOUT)] / \n++turn_count;
-DISPENSE_WAIT --> STANDBY : eEnter [m->pill_count >= 7] / send_msg(EMPTY);
+DISPENSE_WAIT --> STANDBY : eEnter [pill_count >= 7] / send_msg(EMPTY);
 
 note left of DISPENSE_WAIT : Then it dispenses pills every \n 30 seconds starting from the button press.
 note right of DISPENSE_WAIT : When all pills have been dispensed \n (wheel turned 7 times) \n the program starts over.
@@ -43,7 +45,8 @@ DISPENSE_PILL --> DISPENSE_FAIL : eTick [timer >= 4] /
 note left of DISPENSE_PILL : When the wheel is turned, \n the piezo sensor is used to detect \n if a pill was dispensed or not.
 
 DISPENSE_FAIL : eEnter / timer = 0; send_msg(DISP_FAIL);
-DISPENSE_FAIL : eTick / led_toggle(), ++timer;
+DISPENSE_FAIL : eTick / ++timer;
+DISPENSE_FAIL : eTick [timer % 20 = 0] / led_toggle();
 DISPENSE_FAIL : eExit / led_off();
 DISPENSE_FAIL --> DISPENSE_WAIT : eTick [timer >= 200] /
 

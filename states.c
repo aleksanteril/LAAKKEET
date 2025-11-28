@@ -131,7 +131,6 @@ void dispense_wait(Machine_t* m, Events_t e)
                         send_msg(m->uart, "Dispenser EMPTY");
                         change_state(m, standby);
                 }
-                m->timer = 0;
                 break;
         case eExit:
                 break;
