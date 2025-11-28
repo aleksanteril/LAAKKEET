@@ -56,8 +56,11 @@ static int turn_until_opt_fall(Machine_t* m)
 
 void calibrate(Machine_t* m)
 {
+        m->calibrated = false; //Set flag on entry to false
+
         /* Initial orientation */
-        turn_until_opt_fall(m);
+        if (turn_until_opt_fall(m) == TIMEOUT_ERR)
+                return; //Exit fail calib
 
         /* Calc average */
         uint steps = 0;
@@ -65,10 +68,7 @@ void calibrate(Machine_t* m)
         {
                 int result = turn_until_opt_fall(m);
                 if(result == TIMEOUT_ERR)
-                {
-                        m->calibrated = false;
-                        return;
-                }
+                        return; //Exit fail calib
                 steps += result;
         }
 

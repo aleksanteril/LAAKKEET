@@ -19,7 +19,6 @@ static void reset_machine(Machine_t* m)
 {
         m->pill_count = 0;
         m->turn_count = 0;
-        m->calibrated = false;
 }
 
 static char* get_state_name(state next_state)
@@ -110,6 +109,7 @@ void dispense_wait(Machine_t* m, Events_t e)
         {
         case eEnter:
                 time = make_timeout_time_ms(DISPENSE_INTERVAL*1000);
+                printf("Status: dispensed: %u, turns: %u\r\n", m->pill_count, m->turn_count);
                 if(!online())
                         join_lora_network(m->uart, 2);
                 if(m->turn_count >= 7)
