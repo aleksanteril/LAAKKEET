@@ -1,13 +1,13 @@
 @startuml Minimum State Machine
 
 [*] --> STANDBY
-STANDBY : eEnter / reset_machine_struct(&m);
-STANDBY : eTick / led_toggle();
+STANDBY : eEnter / reset_machine(m), timer = 0;
+STANDBY : eTick / led_toggle(); send_msg(EMPTY) [timer>=600];
 STANDBY : eExit / led_off();
 STANDBY --> CHECK_CALIBRATION : eSW0 /
 
 
-note "- struct Machine, jossa pill_count, \n sun muut yleiset tiedot stateille. \n \n - Olkoon 1 tick aluksi 50ms." as N1
+note " - struct Machine, jossa pill_count, \n sun muut yleiset tiedot stateille. \n - Olkoon 1 tick aluksi 50ms.\n - send_msg() on viestin lähetys LoRa verkkoon" as N1
 note left of STANDBY : When the dispenser is started \n it waits for a button to be pressed \n and blinks an LED while waiting.
 
 CHECK_CALIBRATION : eEnter / calibrate();
@@ -18,18 +18,18 @@ CHECK_CALIBRATION --> CALIBRATED : eTick [m->calibrated == true] /
 
 note left of CHECK_CALIBRATION : When the button is pressed the dispenser \n is calibrated by turning the wheel \n at least one full turn and then stopping \n the wheel so that the compartment with \n the sensor opening is aligned with the drop tube.
 
-CALIBRATED : eEnter / led_on();
+CALIBRATED : eEnter / led_on(); send_msg(CALIBRATED);
 CALIBRATED : eTick /
 CALIBRATED : eExit / led_off();
-CALIBRATED --> DISPENSE_WAIT : eSW1 /
+CALIBRATED --> DISPENSE_WAIT : eSW1 / send_msg(DISP_START)
 
 note left of CALIBRATED : After calibration the program keeps \n the LED on until user presses another button.
 
-DISPENSE_WAIT : eEnter / timer = 0;
-DISPENSE_WAIT : eTick / ++timer;
+DISPENSE_WAIT : eEnter / make_timeout_stamp(); send_msg(STATUS);
+DISPENSE_WAIT : eTick / 
 DISPENSE_WAIT : eExit / 
-DISPENSE_WAIT --> DISPENSE_PILL : eTick [timer >= 600] / \n++pill_count, dispense();
-DISPENSE_WAIT --> STANDBY : eEnter [m->pill_count >= 7] /
+DISPENSE_WAIT --> DISPENSE_PILL : eTick [time_reached(TIMEOUT)] / \n++turn_count;
+DISPENSE_WAIT --> STANDBY : eEnter [m->pill_count >= 7] / send_msg(EMPTY);
 
 note left of DISPENSE_WAIT : Then it dispenses pills every \n 30 seconds starting from the button press.
 note right of DISPENSE_WAIT : When all pills have been dispensed \n (wheel turned 7 times) \n the program starts over.
@@ -37,15 +37,15 @@ note right of DISPENSE_WAIT : When all pills have been dispensed \n (wheel turne
 DISPENSE_PILL : eEnter / timer = 0;
 DISPENSE_PILL : eTick / ++timer;
 DISPENSE_PILL : eExit /
-DISPENSE_PILL --> DISPENSE_WAIT : ePiezo / 
+DISPENSE_PILL --> DISPENSE_WAIT : ePiezo / ++pill_count; send_msg(DISP_OK);
 DISPENSE_PILL --> DISPENSE_FAIL : eTick [timer >= 4] /
 
 note left of DISPENSE_PILL : When the wheel is turned, \n the piezo sensor is used to detect \n if a pill was dispensed or not.
 
-DISPENSE_FAIL : eEnter / log_error(), count = 0;
-DISPENSE_FAIL : eTick / led_toggle(), ++count;
-DISPENSE_FAIL : eExit / 
-DISPENSE_FAIL --> DISPENSE_WAIT : eTick [count >= 10] / led_off();
+DISPENSE_FAIL : eEnter / timer = 0; send_msg(DISP_FAIL);
+DISPENSE_FAIL : eTick / led_toggle(), ++timer;
+DISPENSE_FAIL : eExit / led_off();
+DISPENSE_FAIL --> DISPENSE_WAIT : eTick [timer >= 200] /
 
 note left of DISPENSE_FAIL : If no pill was detected (200ms) the LED blinks 5 times.
 
