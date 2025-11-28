@@ -24,13 +24,15 @@ typedef enum Events_t {
 typedef struct Machine_t Machine_t;
 typedef void (*state) (Machine_t* m, Events_t e);
 typedef struct Machine_t {
-        state state;
+        // To EEPROM
+        state state; // In EEPROM this is converted to HEX val depend. on state
         uint8_t pill_count;
-        uint32_t timer;
-        bool calibrated;
         uint8_t turn_count;
-        uint step;
-        uint steps_dispense;
+        uint8_t step;
+        uint16_t steps_dispense;
+        // To EEPROM
+        bool calibrated;
+        uint32_t timer;
         uart_t* uart;
 } Machine_t;
 
