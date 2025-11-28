@@ -109,9 +109,19 @@ void dispense_wait(Machine_t* m, Events_t e)
         {
         case eEnter:
                 time = make_timeout_time_ms(DISPENSE_INTERVAL*1000);
-                printf("Status: dispensed: %u, turns: %u\r\n", m->pill_count, m->turn_count);
-                if(!online())
+
+                // Status msg
+                char msg[42];
+                snprintf(msg, 42, "STATUS: disp: %u, turn: %u", m->pill_count, m->turn_count);
+                printf("%s\r\n", msg);
+
+                send_msg(m->uart, msg);
+                if(!online()) // If message failed, try to connect twice, send again.
+                {
                         join_lora_network(m->uart, 2);
+                        send_msg(m->uart, msg);
+                }
+
                 if(m->turn_count >= 7)
                 {
                         send_msg(m->uart, "Dispenser EMPTY");
