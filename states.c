@@ -54,7 +54,7 @@ void standby(Machine_t* m, Events_t e)
         case eTick:
                 if(++m->timer % 20 == 0)
                         led_toggle(LED_D1_PIN);
-                if(m->timer >= 600) //Reminder to fill every 30sec, also incase empty msg was lost
+                if(m->timer >= 600) //Reminder to fill every ~30sec, also incase empty msg was lost
                 {
                         m->timer = 0;
                         if(!online())
