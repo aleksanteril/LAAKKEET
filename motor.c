@@ -100,17 +100,25 @@ void dispense(Machine_t* m)
         }
 }
 
-void re_calibrate(Machine_t* m)
+void recall_position(Machine_t* m)
 {
-        //Drives backwards until the falling edge is found
-        turn_until_opt_fall(m, BACKWARD);
-
-        //Drive the motor backwards to the middle of the hole, from the edge 144 steps
-        correct_offset(m, BACKWARD);
-
-        //Drive the motor until the last empty block is on top of the hole
-        for (int i = 0; i <= m->turn_count; ++i)
+        //Drive the motor until the last empty block on top of the hole
+        for (int i = 0; i < m->turn_count; ++i)
         {
                 dispense(m);
         }
+        m->calibrated = true;;
+}
+
+void re_calibrate(Machine_t* m)
+{
+        m->calibrated = false;
+        int steps_taken = 0;
+        //Drives backwards until the falling edge is found
+        steps_taken = turn_until_opt_fall(m, BACKWARD);
+
+        if (steps_taken == TIMEOUT_ERR) //|| steps_taken > m->steps_dispense * m-> turn_count + 5
+                return; //Re-calibration failed. Reset the device
+
+        correct_offset(m, BACKWARD);
 }
