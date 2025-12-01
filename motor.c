@@ -33,7 +33,9 @@ static void drive_pins(Machine_t* m, bool direction)
         if (direction)
                 m->step = ++m->step % 8;
         else
-                // TODO: Change this
+                // TODO: Change this to more clear?
+                // Using wraparound to our advantage
+                // when uint 0 - 1 = 255, the oper 255 mod 8 turns to be 7 :)
                 m->step = --m->step % 8;
 
         gpio_put(IN1, hf_step_m[m->step][0]);

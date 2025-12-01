@@ -195,21 +195,21 @@ void recalibrate(Machine_t* m, Events_t e)
 {
         switch(e)
         {
-                case eEnter:
-                        send_msg(m->uart, "Dispenser RECALIB");
-                        re_calibrate(m);
-                        recall_position(m);
-                        break;
-                case eExit:
-                        break;
-                case eTick:
-                        send_msg(m->uart, "Dispense UNCERTAIN");
-                        change_state(m, dispense_wait);
-                        break;
-                case ePiezo:
-                        ++m->pill_count;
-                        send_msg(m->uart, "Dispense OK");
-                        change_state(m, dispense_wait);
-                        break;
+        case eEnter:
+                send_msg(m->uart, "Dispenser RECALIB");
+                re_calibrate(m);
+                recall_position(m);
+                break;
+        case eExit:
+                break;
+        case eTick:
+                send_msg(m->uart, "Dispense UNCERTAIN");
+                change_state(m, dispense_wait);
+                break;
+        case ePiezo:
+                ++m->pill_count;
+                send_msg(m->uart, "Dispense OK");
+                change_state(m, dispense_wait);
+                break;
         }
 }
