@@ -196,15 +196,24 @@ void recalibrate(Machine_t* m, Events_t e)
         switch(e)
         {
         case eEnter:
-                send_msg(m->uart, "Dispenser RECALIB");
                 re_calibrate(m);
+                if (m->calibrated == false)
+                {
+                        send_msg(m->uart, "Dispenser RECALIB FAIL");
+                        change_state(m, standby);
+                }
                 recall_position(m);
+                send_msg(m->uart, "Dispenser RECALIB");
+                m->timer = 0;
                 break;
         case eExit:
                 break;
         case eTick:
-                send_msg(m->uart, "Dispense UNCERTAIN");
-                change_state(m, dispense_wait);
+                if(++m->timer >= DISPENSE_FAIL_TICKS)
+                {
+                        send_msg(m->uart, "Dispense UNCERTAIN");
+                        change_state(m, dispense_wait);
+                }
                 break;
         case ePiezo:
                 ++m->pill_count;
