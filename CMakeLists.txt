@@ -31,6 +31,7 @@ add_executable(${PROJECT_NAME}
         network.c
         uart.c
         motor.c
+        eeprom.c
 )
 
 # Create map/bin/hex/uf2 files
