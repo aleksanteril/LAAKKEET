@@ -4,6 +4,7 @@
 #include "machine.h"
 
 void init_eeprom();
+void erase_save();
 
 void save_machine(Machine_t* m);
 bool load_machine(Machine_t* m);

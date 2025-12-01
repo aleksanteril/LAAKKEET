@@ -93,3 +93,9 @@ bool load_machine(Machine_t* m)
         m->step = data[5];
         return true;
 }
+
+void erase_save()
+{
+        //Make the save CRC invalid by writing FF to the first byte.
+        write_byte(SAVE_ADDR, 0xFF);
+}
