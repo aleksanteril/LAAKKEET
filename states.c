@@ -186,3 +186,23 @@ void dispense_fail(Machine_t* m, Events_t e)
                 break;
         }
 }
+
+void recalibrate(Machine_t* m, Events_t e)
+{
+        switch(e)
+        {
+                case eEnter:
+                        re_calibrate(m);
+                        recall_position(m);
+                        break;
+                case eExit:
+                        break;
+                case eTick:
+                        change_state(m, dispense_wait);
+                        break;
+                case ePiezo:
+                        send_msg(m->uart, "Dispense OK");
+                        change_state(m, dispense_wait);
+                        break;
+        }
+}
