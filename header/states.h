@@ -43,5 +43,6 @@ void calibrated (Machine_t* m, Events_t e);
 void dispense_wait (Machine_t* m, Events_t e);
 void dispense_pill (Machine_t* m, Events_t e);
 void dispense_fail (Machine_t* m, Events_t e);
+void recalibrate(Machine_t* m, Events_t e);
 
 #endif
