@@ -7,6 +7,7 @@
 #include "io.h"
 #include "motor.h"
 #include "network.h"
+#include "save.h"
 
 #define DISPENSE_TICKS (DISPENSE_INTERVAL*1000/TICK_SLEEP)
 #define DISPENSE_FAIL_TICKS (TIME_TO_DISPENSE_FAIL/TICK_SLEEP)
@@ -39,7 +40,9 @@ static void change_state(Machine_t *m, state next_state)
 {
         printf("Changing state to %s.\r\n", get_state_name(next_state));
         m->state(m, eExit);
+
         m->state = next_state;
+        save_machine(m);
         m->state(m, eEnter);
 }
 

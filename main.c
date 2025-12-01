@@ -34,6 +34,9 @@ int main()
 {
         stdio_init_all();
 
+        // Init eeprom i2c to save state
+        init_eeprom();
+
         // Init pins here!
         setup_gpio(LED_D1_PIN, GPIO_OUT);
         setup_gpio(SW0_PIN, GPIO_IN);
@@ -57,17 +60,18 @@ int main()
         // Init Lora comm through UART
         uart_t* uart = init_uart_routine(1, 9600);
 
-        // Init eeprom i2c to save state
-        init_eeprom();
-
         // Init machine here!
         Machine_t mn = { .uart = uart };
         join_lora_network(mn.uart, 5);
-        init_sm(&mn, standby);
 
         //Boot msg to LORA and UART
         printf("PICO: Boot up\r\n");
         send_msg(mn.uart, "Boot");
+
+        if(load_machine(&mn))
+                init_sm(&mn, mn.state);
+        else
+                init_sm(&mn, standby);
 
         // Start machine here
         while (true)

@@ -60,7 +60,7 @@ uint16_t steps_dispense;
 void save_machine(Machine_t* m)
 {
         // Build the save frame
-        uint8_t data[DATA_SIZE];
+        uint8_t data[DATA_SIZE] = {};
         data[0] = state_to_hex(m->state);
         data[1] = m->pill_count;
         data[2] = m->turn_count;
@@ -77,7 +77,7 @@ void save_machine(Machine_t* m)
 
 bool load_machine(Machine_t* m)
 {
-        uint8_t data[DATA_SIZE];
+        uint8_t data[DATA_SIZE] = {};
         read_page(SAVE_ADDR, data, DATA_SIZE);
 
         if (crc16(data, DATA_SIZE) != 0)
