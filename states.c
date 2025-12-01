@@ -29,6 +29,7 @@ static char* get_state_name(state next_state)
         if (next_state == dispense_wait) return "DISPENSE_WAIT";
         if (next_state == dispense_pill) return "DISPENSE_PILL";
         if (next_state == dispense_fail) return "DISPENSE_FAIL";
+        if (next_state == recalibrate) return "RECALIBRATE";
         return "UNKNOWN";
 }
 
