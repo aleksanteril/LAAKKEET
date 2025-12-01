@@ -12,12 +12,6 @@
 #define DISPENSE_TICKS (DISPENSE_INTERVAL*1000/TICK_SLEEP)
 #define DISPENSE_FAIL_TICKS (TIME_TO_DISPENSE_FAIL/TICK_SLEEP)
 
-void init_sm(Machine_t *m, state init_state)
-{
-        m->state = init_state;
-        m->state(m, eEnter);
-}
-
 static void reset_machine(Machine_t* m)
 {
         m->pill_count = 0;
@@ -34,6 +28,21 @@ static char* get_state_name(state next_state)
         if (next_state == dispense_fail) return "DISPENSE_FAIL";
         if (next_state == recalibrate) return "RECALIBRATE";
         return "UNKNOWN";
+}
+
+void init_sm(Machine_t *m, state init_state)
+{
+        if(init_state == dispense_pill)
+        {
+                printf("Dispenser shutdown while turning, starting from: RECALIBRATE");
+                m->state = recalibrate;
+        }
+        else
+        {
+                printf("Starting from state: %s.\r\n", get_state_name(init_state));
+                m->state = init_state;
+        }
+        m->state(m, eEnter);
 }
 
 static void change_state(Machine_t *m, state next_state)

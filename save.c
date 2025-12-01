@@ -2,9 +2,9 @@
 #include "eeprom.h"
 #include "states.h"
 
-/* We will use the last 64byte strip (0x7fbf - 0x7fff)
- * to save all data with CRC signature, atleast that area is reserved for that purpose */
-#define SAVE_ADDR 0x7FBF
+/* We will use the last 64byte page for save data (0x7fc0 - 0x7fff)
+ * save all data with CRC signature, that area is reserved for that purpose */
+#define SAVE_ADDR (MAX_ADDR-63)
 #define DATA_SIZE 7
 
 typedef enum state_hex_t{
@@ -88,6 +88,6 @@ bool load_machine(Machine_t* m)
         m->pill_count = data[1];
         m->turn_count = data[2];
         m->steps_dispense = (uint16_t) data[3] << 8; //MSB
-        m->steps_dispense = (uint16_t) data[4]; //LSB
+        m->steps_dispense |= (uint16_t) data[4]; //LSB
         return true;
 }
