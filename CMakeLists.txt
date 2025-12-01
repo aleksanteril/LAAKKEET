@@ -31,6 +31,7 @@ add_executable(${PROJECT_NAME}
         network.c
         uart.c
         motor.c
+        eeprom.c
 )
 
 # Create map/bin/hex/uf2 files
@@ -41,6 +42,7 @@ target_link_libraries(${PROJECT_NAME}
         pico_stdlib
         hardware_pwm
         hardware_gpio
+        hardware_i2c
 )
 
 # Disable usb output, enable uart output
