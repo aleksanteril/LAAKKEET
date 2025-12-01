@@ -141,10 +141,7 @@ void dispense_wait(Machine_t* m, Events_t e)
         case eTick:
                 //if(++m->timer >= DISPENSE_TICKS)
                 if(time_reached(time))
-                {
-                        ++m->turn_count;
                         change_state(m, dispense_pill);
-                }
                 break;
         }
 }
@@ -156,6 +153,7 @@ void dispense_pill(Machine_t* m, Events_t e)
         case eEnter:
                 m->timer = 0;
                 dispense(m);
+                ++m->turn_count;
                 break;
         case eExit:
                 break;
@@ -202,23 +200,13 @@ void recalibrate(Machine_t* m, Events_t e)
                         send_msg(m->uart, "Dispenser RECALIB FAIL");
                         change_state(m, standby);
                 }
-                recall_position(m);
                 send_msg(m->uart, "Dispenser RECALIB");
-                m->timer = 0;
                 break;
         case eExit:
                 break;
         case eTick:
-                if(++m->timer >= DISPENSE_FAIL_TICKS)
-                {
-                        send_msg(m->uart, "Dispense UNCERTAIN");
-                        change_state(m, dispense_wait);
-                }
-                break;
-        case ePiezo:
-                ++m->pill_count;
-                send_msg(m->uart, "Dispense OK");
-                change_state(m, dispense_wait);
+                recall_position(m);
+                change_state(m, dispense_pill);
                 break;
         }
 }
