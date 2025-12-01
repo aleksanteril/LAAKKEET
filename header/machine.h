@@ -22,10 +22,10 @@ typedef struct Machine_t {
         uint8_t pill_count;
         uint8_t turn_count;
         uint16_t steps_dispense;
+        uint8_t step;
         // To EEPROM
         uint32_t timer;
         bool calibrated;
-        uint8_t step;
         uart_t* uart;
 } Machine_t;
 

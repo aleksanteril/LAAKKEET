@@ -5,7 +5,7 @@
 /* We will use the last 64byte page for save data (0x7fc0 - 0x7fff)
  * save all data with CRC signature, that area is reserved for that purpose */
 #define SAVE_ADDR (MAX_ADDR-63)
-#define DATA_SIZE 7
+#define DATA_SIZE 8
 
 typedef enum state_hex_t{
         HEX_INVALID = 0x0,
@@ -60,24 +60,25 @@ uint16_t steps_dispense;
 void save_machine(Machine_t* m)
 {
         // Build the save frame
-        uint8_t data[DATA_SIZE] = {};
+        uint8_t data[DATA_SIZE];
         data[0] = state_to_hex(m->state);
         data[1] = m->pill_count;
         data[2] = m->turn_count;
         data[3] = (uint8_t) (m->steps_dispense >> 8); //MSB
         data[4] = (uint8_t) (m->steps_dispense & 0xFF); //LSB
+        data[5] = m->step;
 
         /* Add CRC */
         uint16_t crc = crc16(data, 5);
-        data[5] = (uint8_t) (crc >> 8);
-        data[6] = (uint8_t) crc;
+        data[6] = (uint8_t) (crc >> 8);
+        data[7] = (uint8_t) crc;
 
         write_page(SAVE_ADDR, data, DATA_SIZE);
 }
 
 bool load_machine(Machine_t* m)
 {
-        uint8_t data[DATA_SIZE] = {};
+        uint8_t data[DATA_SIZE];
         read_page(SAVE_ADDR, data, DATA_SIZE);
 
         if (crc16(data, DATA_SIZE) != 0)
@@ -89,5 +90,6 @@ bool load_machine(Machine_t* m)
         m->turn_count = data[2];
         m->steps_dispense = (uint16_t) data[3] << 8; //MSB
         m->steps_dispense |= (uint16_t) data[4]; //LSB
+        m->step = data[5];
         return true;
 }
