@@ -69,7 +69,7 @@ void save_machine(Machine_t* m)
         data[5] = m->step;
 
         /* Add CRC */
-        uint16_t crc = crc16(data, 5);
+        uint16_t crc = crc16(data, DATA_SIZE-2);
         data[6] = (uint8_t) (crc >> 8);
         data[7] = (uint8_t) crc;
 
