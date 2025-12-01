@@ -6,7 +6,7 @@
 #define MAX_ADDR 0x7FFF
 #define MIN_ADDR 0x0000
 
-void init_eeprom();
+void init_i2c();
 
 int write_byte(uint16_t addr, uint8_t byte);
 int read_byte(uint16_t addr, uint8_t* byte);

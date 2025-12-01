@@ -1,9 +1,12 @@
 #include <stdio.h>
-#include "metropolia_board.h"
 #include "pico/stdlib.h"
+#include "pico/util/queue.h"
+
+#include "metropolia_board.h"
 #include "states.h"
 #include "io.h"
-#include "pico/util/queue.h"
+#include "network.h"
+#include "save.h"
 
 #define QUEUE_SIZE 30
 
@@ -53,6 +56,9 @@ int main()
 
         // Init Lora comm through UART
         uart_t* uart = init_uart_routine(1, 9600);
+
+        // Init eeprom i2c to save state
+        init_eeprom();
 
         // Init machine here!
         Machine_t mn = { .uart = uart };

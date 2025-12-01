@@ -1,7 +1,7 @@
 #ifndef LAAKKEET_MOTOR_H
 #define LAAKKEET_MOTOR_H
-#include "states.h"
 
+#include "machine.h"
 
 /* Turn motor with specific step count, blocking */
 void calibrate(Machine_t* m);

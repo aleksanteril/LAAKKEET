@@ -1,10 +1,12 @@
 /* TÄHÄN FILEEN STATE FUNKTIOT */
-#include "states.h"
 #include <stdio.h>
+#include "pico/time.h"
+
+#include "states.h"
 #include "metropolia_board.h"
 #include "io.h"
-#include "pico/time.h"
 #include "motor.h"
+#include "network.h"
 
 #define DISPENSE_TICKS (DISPENSE_INTERVAL*1000/TICK_SLEEP)
 #define DISPENSE_FAIL_TICKS (TIME_TO_DISPENSE_FAIL/TICK_SLEEP)
@@ -197,10 +199,10 @@ void recalibrate(Machine_t* m, Events_t e)
                 re_calibrate(m);
                 if (m->calibrated == false)
                 {
-                        send_msg(m->uart, "Dispenser RECALIB FAIL");
+                        send_msg(m->uart, "RECALIB FAILED");
                         change_state(m, standby);
                 }
-                send_msg(m->uart, "Dispenser RECALIB");
+                send_msg(m->uart, "RECALIBRATED");
                 break;
         case eExit:
                 break;

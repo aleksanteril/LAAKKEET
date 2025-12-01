@@ -12,7 +12,7 @@
 #define TIMEOUT_US 8000 // 8ms
 
 /* Uses I2C0 to communicate at ~100khz */
-void init_eeprom()
+void init_i2c()
 {
         i2c_init(EEPROM_I2C, 100000);
 
