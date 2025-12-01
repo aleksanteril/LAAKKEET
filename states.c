@@ -34,7 +34,7 @@ void init_sm(Machine_t *m, state init_state)
 {
         if(init_state == dispense_pill)
         {
-                printf("Dispenser shutdown while turning, starting from: RECALIBRATE");
+                printf("Dispenser shutdown while turning, starting from: RECALIBRATE\r\n");
                 m->state = recalibrate;
         }
         else
