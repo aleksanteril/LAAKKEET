@@ -29,6 +29,7 @@ static char* get_state_name(state next_state)
         if (next_state == dispense_wait) return "DISPENSE_WAIT";
         if (next_state == dispense_pill) return "DISPENSE_PILL";
         if (next_state == dispense_fail) return "DISPENSE_FAIL";
+        if (next_state == recalibrate) return "RECALIBRATE";
         return "UNKNOWN";
 }
 
@@ -77,7 +78,10 @@ void check_calibration(Machine_t* m, Events_t e)
                 break;
         case eExit:
                 if(!m->calibrated)
+                {
                         printf("Calibration failed.\r\n");
+                        send_msg(m->uart, "CALIB FAILED");
+                }
                 break;
         case eTick:
                 change_state(m, m->calibrated ? calibrated : standby);
@@ -183,6 +187,29 @@ void dispense_fail(Machine_t* m, Events_t e)
                         led_toggle(LED_D1_PIN);
                 else if(m->timer >= 200)
                         change_state(m, dispense_wait);
+                break;
+        }
+}
+
+void recalibrate(Machine_t* m, Events_t e)
+{
+        switch(e)
+        {
+        case eEnter:
+                send_msg(m->uart, "Dispenser RECALIB");
+                re_calibrate(m);
+                recall_position(m);
+                break;
+        case eExit:
+                break;
+        case eTick:
+                send_msg(m->uart, "Dispense UNCERTAIN");
+                change_state(m, dispense_wait);
+                break;
+        case ePiezo:
+                ++m->pill_count;
+                send_msg(m->uart, "Dispense OK");
+                change_state(m, dispense_wait);
                 break;
         }
 }

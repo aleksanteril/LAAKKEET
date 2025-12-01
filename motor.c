@@ -13,7 +13,8 @@
 #define TURNS 1
 #define TIMEOUT_ERR (-1)
 
-static void drive_pins(Machine_t* m)
+//Direction: true = forward, false = backwards
+static void drive_pins(Machine_t* m, bool direction)
 {
         /* Half-Stepping binary array for motor steps */
         /* IN1 | IN2 | IN3 | IN4 */
@@ -29,15 +30,22 @@ static void drive_pins(Machine_t* m)
         };
 
         /* Keep track of motor step state */
-        m->step = ++m->step % 8;
+        if (direction)
+                m->step = ++m->step % 8;
+        else
+                // TODO: Change this to more clear?
+                // Using wraparound to our advantage
+                // when uint 0 - 1 = 255, the oper 255 mod 8 turns to be 7 :)
+                m->step = --m->step % 8;
 
         gpio_put(IN1, hf_step_m[m->step][0]);
         gpio_put(IN2, hf_step_m[m->step][1]);
         gpio_put(IN3, hf_step_m[m->step][2]);
         gpio_put(IN4, hf_step_m[m->step][3]);
+        sleep_us(SLEEP_BETWEEN);
 }
 
-static int turn_until_opt_fall(Machine_t* m)
+static int turn_until_opt_fall(Machine_t* m, bool direction)
 {
         set_prev_state(gpio_get(OPT_SW_PIN));
         absolute_time_t time;
@@ -48,10 +56,18 @@ static int turn_until_opt_fall(Machine_t* m)
         {
                 if(time_reached(time))
                         return TIMEOUT_ERR; //TIMEOUT on turn
-                sleep_us(SLEEP_BETWEEN);
-                drive_pins(m);
+                drive_pins(m, direction);
         }
         return i;
+}
+
+void correct_offset(Machine_t* m, bool direction)
+{
+        //Drive the motor backwards to the middle of the hole, from the edge 144 steps
+        for(int i = 0; i < OFFSET_CORR; ++i)
+        {
+                drive_pins(m, direction);
+        }
 }
 
 void calibrate(Machine_t* m)
@@ -59,25 +75,21 @@ void calibrate(Machine_t* m)
         m->calibrated = false; //Set flag on entry to false
 
         /* Initial orientation */
-        if (turn_until_opt_fall(m) == TIMEOUT_ERR)
+        if (turn_until_opt_fall(m, true) == TIMEOUT_ERR)
                 return; //Exit fail calib
 
         /* Calc average */
         uint steps = 0;
         for (int i = 0; i < TURNS; ++i)
         {
-                int result = turn_until_opt_fall(m);
+                int result = turn_until_opt_fall(m, true);
                 if(result == TIMEOUT_ERR)
                         return; //Exit fail calib
                 steps += result;
         }
 
         //Drive the motor to the middle of the hole, from the edge 144 steps
-        for(int i = 0; i < OFFSET_CORR; ++i)
-        {
-                sleep_us(SLEEP_BETWEEN);
-                drive_pins(m);
-        }
+        correct_offset(m, true);
 
         m->calibrated = true;
         m->steps_dispense = (steps/TURNS)/WHOLE_TURN;
@@ -87,7 +99,28 @@ void dispense(Machine_t* m)
 {
         for (int i = 0; i < m->steps_dispense; ++i)
         {
-                sleep_us(SLEEP_BETWEEN);
-                drive_pins(m);
+                drive_pins(m, true);
         }
+}
+
+void recall_position(Machine_t* m)
+{
+        //Drive the motor until the last empty block on top of the hole
+        for (int i = 0; i < m->turn_count; ++i)
+        {
+                dispense(m);
+        }
+}
+
+void re_calibrate(Machine_t* m)
+{
+        m->calibrated = false;
+        //Drives backwards until the falling edge is found
+        int steps_taken = turn_until_opt_fall(m, false);
+
+        if (steps_taken == TIMEOUT_ERR) //|| steps_taken > m->steps_dispense * m-> turn_count + 5
+                return; //Re-calibration failed. Reset the device
+
+        correct_offset(m, false);
+        m->calibrated = true;
 }
