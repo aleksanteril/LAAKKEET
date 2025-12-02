@@ -1,10 +1,10 @@
+#include <math.h>
+#include "hardware/gpio.h"
+#include "pico/time.h"
+
 #include "metropolia_board.h"
 #include "motor.h"
 #include "io.h"
-#include <math.h>
-
-#include "hardware/gpio.h"
-#include "pico/time.h"
 
 #define SLEEP_BETWEEN 3000
 #define OFFSET_CORR 144

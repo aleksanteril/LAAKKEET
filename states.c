@@ -1,19 +1,16 @@
 /* TÄHÄN FILEEN STATE FUNKTIOT */
-#include "states.h"
 #include <stdio.h>
+#include "pico/time.h"
+
+#include "states.h"
 #include "metropolia_board.h"
 #include "io.h"
-#include "pico/time.h"
 #include "motor.h"
+#include "network.h"
+#include "save.h"
 
 #define DISPENSE_TICKS (DISPENSE_INTERVAL*1000/TICK_SLEEP)
 #define DISPENSE_FAIL_TICKS (TIME_TO_DISPENSE_FAIL/TICK_SLEEP)
-
-void init_sm(Machine_t *m, state init_state)
-{
-        m->state = init_state;
-        m->state(m, eEnter);
-}
 
 static void reset_machine(Machine_t* m)
 {
@@ -33,11 +30,28 @@ static char* get_state_name(state next_state)
         return "UNKNOWN";
 }
 
+void init_sm(Machine_t *m, state init_state)
+{
+        if(init_state == dispense_pill)
+        {
+                printf("Dispenser shutdown while turning, starting from: RECALIBRATE\r\n");
+                m->state = recalibrate;
+        }
+        else
+        {
+                printf("Starting from state: %s.\r\n", get_state_name(init_state));
+                m->state = init_state;
+        }
+        m->state(m, eEnter);
+}
+
 static void change_state(Machine_t *m, state next_state)
 {
         printf("Changing state to %s.\r\n", get_state_name(next_state));
         m->state(m, eExit);
+
         m->state = next_state;
+        save_machine(m);
         m->state(m, eEnter);
 }
 
@@ -55,7 +69,7 @@ void standby(Machine_t* m, Events_t e)
         case eTick:
                 if(++m->timer % 20 == 0)
                         led_toggle(LED_D1_PIN);
-                if(m->timer >= 600) //Reminder to fill every 30sec, also incase empty msg was lost
+                if(m->timer >= 600) //Reminder to fill every ~30sec, also incase empty msg was lost
                 {
                         m->timer = 0;
                         if(!online())
@@ -141,10 +155,7 @@ void dispense_wait(Machine_t* m, Events_t e)
         case eTick:
                 //if(++m->timer >= DISPENSE_TICKS)
                 if(time_reached(time))
-                {
-                        ++m->turn_count;
                         change_state(m, dispense_pill);
-                }
                 break;
         }
 }
@@ -156,6 +167,7 @@ void dispense_pill(Machine_t* m, Events_t e)
         case eEnter:
                 m->timer = 0;
                 dispense(m);
+                ++m->turn_count;
                 break;
         case eExit:
                 break;
@@ -196,20 +208,19 @@ void recalibrate(Machine_t* m, Events_t e)
         switch(e)
         {
         case eEnter:
-                send_msg(m->uart, "Dispenser RECALIB");
                 re_calibrate(m);
-                recall_position(m);
+                if (m->calibrated == false)
+                {
+                        send_msg(m->uart, "RECALIB FAILED");
+                        change_state(m, standby);
+                }
+                send_msg(m->uart, "RECALIBRATED");
                 break;
         case eExit:
                 break;
         case eTick:
-                send_msg(m->uart, "Dispense UNCERTAIN");
-                change_state(m, dispense_wait);
-                break;
-        case ePiezo:
-                ++m->pill_count;
-                send_msg(m->uart, "Dispense OK");
-                change_state(m, dispense_wait);
+                recall_position(m);
+                change_state(m, dispense_pill);
                 break;
         }
 }
