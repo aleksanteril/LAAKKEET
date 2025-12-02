@@ -7,8 +7,15 @@ STANDBY : eTick [timer>=600] / send_msg(EMPTY), timer = 0;
 STANDBY : eExit / led_off();
 STANDBY --> CHECK_CALIBRATION : eSW0 /
 
+[*] -> RECALIBRATE : [If state loaded from EEPROM on boot was DISPENSE_PILL]\n / Recalibrate the spinner.
+RECALIBRATE : eEnter / re_calibrate();
+RECALIBRATE : eTick /
+RECALIBRATE : eExit /
+RECALIBRATE --> STANDBY : eEnter [calibrated = false] / send_msg(RECAL FAIL);
+RECALIBRATE --> DISPENSE_PILL : eTick / recall_position();
 
-note " - struct Machine, jossa pill_count, \n sun muut yleiset tiedot stateille. \n - Olkoon 1 tick aluksi 50ms.\n - send_msg() on viestin lähetys LoRa verkkoon" as N1
+
+note " - struct Machine, jossa pill_count, \n sun muut yleiset tiedot stateille. \n - Olkoon 1 tick aluksi 50ms.\n - send_msg() on viestin lähetys LoRa verkkoon\n - EEPROM Tallennus tapahtuu aina kun tila vaihtuu" as N1
 note left of STANDBY : When the dispenser is started \n it waits for a button to be pressed \n and blinks an LED while waiting.
 
 CHECK_CALIBRATION : eEnter / calibrate();
@@ -30,13 +37,14 @@ DISPENSE_WAIT : eEnter / make_timeout_stamp();
 DISPENSE_WAIT : eEnter [RETRY TWICE!] / send_msg(STATUS);
 DISPENSE_WAIT : eTick / 
 DISPENSE_WAIT : eExit / 
-DISPENSE_WAIT --> DISPENSE_PILL : eTick [time_reached(TIMEOUT)] / \n++turn_count;
+DISPENSE_WAIT --> DISPENSE_PILL : eTick [time_reached(TIMEOUT)] /
 DISPENSE_WAIT --> STANDBY : eEnter [pill_count >= 7] / send_msg(EMPTY);
 
 note left of DISPENSE_WAIT : Then it dispenses pills every \n 30 seconds starting from the button press.
 note right of DISPENSE_WAIT : When all pills have been dispensed \n (wheel turned 7 times) \n the program starts over.
 
-DISPENSE_PILL : eEnter / timer = 0;
+DISPENSE_PILL : eEnter / timer = 0, dispense();
+DISPENSE_PILL : eEnter / ++turn_count;
 DISPENSE_PILL : eTick / ++timer;
 DISPENSE_PILL : eExit /
 DISPENSE_PILL --> DISPENSE_WAIT : ePiezo / ++pill_count; send_msg(DISP_OK);
