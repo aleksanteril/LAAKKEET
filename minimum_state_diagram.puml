@@ -20,7 +20,7 @@ note left of STANDBY : When the dispenser is started \n it waits for a button to
 
 CHECK_CALIBRATION : eEnter / calibrate();
 CHECK_CALIBRATION : eTick / 
-CHECK_CALIBRATION : eExit /
+CHECK_CALIBRATION : eExit [calibrated = false] / send_msg(CALIB FAIL);
 CHECK_CALIBRATION --> STANDBY : eTick [calibrated = false] /
 CHECK_CALIBRATION --> CALIBRATED : eTick [calibrated = true] /
 
@@ -38,7 +38,7 @@ DISPENSE_WAIT : eEnter [RETRY TWICE!] / send_msg(STATUS);
 DISPENSE_WAIT : eTick / 
 DISPENSE_WAIT : eExit / 
 DISPENSE_WAIT --> DISPENSE_PILL : eTick [time_reached(TIMEOUT)] /
-DISPENSE_WAIT --> STANDBY : eEnter [pill_count >= 7] / send_msg(EMPTY);
+DISPENSE_WAIT --> STANDBY : eEnter [turn_count >= 7] / send_msg(EMPTY);
 
 note left of DISPENSE_WAIT : Then it dispenses pills every \n 30 seconds starting from the button press.
 note right of DISPENSE_WAIT : When all pills have been dispensed \n (wheel turned 7 times) \n the program starts over.
