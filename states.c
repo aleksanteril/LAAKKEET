@@ -42,6 +42,9 @@ void init_sm(Machine_t *m, state init_state)
                 printf("Starting from state: %s.\r\n", get_state_name(init_state));
                 m->state = init_state;
         }
+        char msg[32];
+        snprintf(msg, 32, "Start from %s", get_state_name(m->state));
+        send_msg(m->uart, msg);
         m->state(m, eEnter);
 }
 
@@ -208,6 +211,7 @@ void recalibrate(Machine_t* m, Events_t e)
         switch(e)
         {
         case eEnter:
+                send_msg(m->uart, "Power lost on dispense");
                 re_calibrate(m);
                 if (m->calibrated == false)
                 {
