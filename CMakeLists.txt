@@ -33,7 +33,6 @@ add_executable(${PROJECT_NAME}
         motor.c
         eeprom.c
         save.c
-        header/save.h
 )
 
 # Create map/bin/hex/uf2 files
