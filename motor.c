@@ -61,10 +61,9 @@ static int turn_until_opt_fall(Machine_t* m, bool direction)
         return i;
 }
 
-void correct_offset(Machine_t* m, bool direction)
+static void drive_steps(Machine_t* m, uint steps, bool direction)
 {
-        //Drive the motor backwards to the middle of the hole, from the edge 144 steps
-        for(int i = 0; i < OFFSET_CORR; ++i)
+        for(int i = 0; i < steps; ++i)
         {
                 drive_pins(m, direction);
         }
@@ -89,7 +88,7 @@ void calibrate(Machine_t* m)
         }
 
         //Drive the motor to the middle of the hole, from the edge 144 steps
-        correct_offset(m, true);
+        drive_steps(m, OFFSET_CORR, true);
 
         m->calibrated = true;
         m->steps_dispense = (steps/TURNS)/WHOLE_TURN;
@@ -115,12 +114,18 @@ void recall_position(Machine_t* m)
 void re_calibrate(Machine_t* m)
 {
         m->calibrated = false;
+
+        //This is for, if pwr is lost during recalib and we are in the opt_sw "dip" area
+        //drive the motor forwards to get out of the dip for recalib so it doesnt do a full circle backwards!!
+        if(!gpio_get(OPT_SW_PIN))
+                drive_steps(m, 512, true);
+
         //Drives backwards until the falling edge is found
         int steps_taken = turn_until_opt_fall(m, false);
 
         if (steps_taken == TIMEOUT_ERR) //|| steps_taken > m->steps_dispense * m-> turn_count + 5
                 return; //Re-calibration failed. Reset the device
 
-        correct_offset(m, false);
+        drive_steps(m, OFFSET_CORR, false);
         m->calibrated = true;
 }
