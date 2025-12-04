@@ -26,6 +26,7 @@ static char* get_state_name(state next_state)
         if (next_state == dispense_wait) return "DISPENSE_WAIT";
         if (next_state == dispense_pill) return "DISPENSE_PILL";
         if (next_state == dispense_fail) return "DISPENSE_FAIL";
+        if (next_state == dispense_ok) return "DISPENSE_OK";
         if (next_state == recalibrate) return "RECALIBRATE";
         return "UNKNOWN";
 }
@@ -35,6 +36,7 @@ void init_sm(Machine_t *m, state init_state)
         if(init_state == dispense_pill)
         {
                 printf("Dispenser shutdown while turning, starting from: RECALIBRATE\r\n");
+                send_msg(m->uart, "Power lost on dispense");
                 m->state = recalibrate;
         }
         else
@@ -94,14 +96,16 @@ void check_calibration(Machine_t* m, Events_t e)
                 calibrate(m);
                 break;
         case eExit:
-                if(!m->calibrated)
+                break;
+        case eTick:
+                if(m->calibrated)
+                        change_state(m, calibrated);
+                else
                 {
                         printf("Calibration failed.\r\n");
                         send_msg(m->uart, "CALIB FAILED");
+                        change_state(m, standby);
                 }
-                break;
-        case eTick:
-                change_state(m, m->calibrated ? calibrated : standby);
                 break;
         }
 }
@@ -180,7 +184,22 @@ void dispense_pill(Machine_t* m, Events_t e)
                 break;
         case ePiezo:
                 ++m->pill_count;
+                change_state(m, dispense_ok);
+                break;
+        }
+}
+
+void dispense_ok(Machine_t* m, Events_t e)
+{
+        switch(e)
+        {
+        case eEnter:
+                printf("STATUS: Dispense OK\r\n");
                 send_msg(m->uart, "Dispense OK");
+                break;
+        case eExit:
+                break;
+        case eTick:
                 change_state(m, dispense_wait);
                 break;
         }
@@ -191,6 +210,7 @@ void dispense_fail(Machine_t* m, Events_t e)
         switch(e)
         {
         case eEnter:
+                printf("STATUS: Dispense FAIL\r\n");
                 send_msg(m->uart, "Dispense FAIL");
                 m->timer = 0;
                 break;
@@ -211,19 +231,18 @@ void recalibrate(Machine_t* m, Events_t e)
         switch(e)
         {
         case eEnter:
-                send_msg(m->uart, "Power lost on dispense");
                 re_calibrate(m);
                 if (m->calibrated == false)
                 {
                         send_msg(m->uart, "RECALIB FAILED");
                         change_state(m, standby);
                 }
+                recall_position(m);
                 send_msg(m->uart, "RECALIBRATED");
                 break;
         case eExit:
                 break;
         case eTick:
-                recall_position(m);
                 change_state(m, dispense_pill);
                 break;
         }

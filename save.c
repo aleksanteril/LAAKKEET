@@ -15,7 +15,8 @@ typedef enum state_hex_t{
         HEX_DISPENSE_WAIT = 0x4,
         HEX_DISPENSE_PILL = 0x5,
         HEX_DISPENSE_FAIL = 0x6,
-        HEX_RECALIBRATE = 0x7
+        HEX_DISPENSE_OK = 0x7,
+        HEX_RECALIBRATE = 0x8
 } state_hex_t;
 
 static uint8_t state_to_hex(state state)
@@ -26,6 +27,7 @@ static uint8_t state_to_hex(state state)
         if (state == dispense_wait) return HEX_DISPENSE_WAIT;
         if (state == dispense_pill) return HEX_DISPENSE_PILL;
         if (state == dispense_fail) return HEX_DISPENSE_FAIL;
+        if (state == dispense_ok) return HEX_DISPENSE_OK;
         if (state == recalibrate) return HEX_RECALIBRATE;
         return HEX_INVALID;
 }
@@ -40,6 +42,7 @@ static state hex_to_state(uint8_t hex)
         case HEX_DISPENSE_WAIT: return dispense_wait;
         case HEX_DISPENSE_PILL: return dispense_pill;
         case HEX_DISPENSE_FAIL: return dispense_fail;
+        case HEX_DISPENSE_OK: return dispense_ok;
         case HEX_RECALIBRATE: return recalibrate;
         default: return standby;
         }
