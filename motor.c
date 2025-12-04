@@ -96,10 +96,7 @@ void calibrate(Machine_t* m)
 
 void dispense(Machine_t* m)
 {
-        for (int i = 0; i < m->steps_dispense; ++i)
-        {
-                drive_pins(m, true);
-        }
+        drive_steps(m, m->steps_dispense, true);
 }
 
 void recall_position(Machine_t* m)
