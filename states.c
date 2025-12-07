@@ -156,7 +156,6 @@ void dispense_wait(Machine_t* m, Events_t e)
                 if(m->turn_count >= 7)
                 {
                         send_msg(m->uart, "Dispenser EMPTY");
-                        write_log("- Weekly log END -");
                         change_state(m, standby);
                 }
                 break;
