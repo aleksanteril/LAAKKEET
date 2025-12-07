@@ -8,6 +8,7 @@
 #include "motor.h"
 #include "network.h"
 #include "save.h"
+#include "logger.h"
 
 #define DISPENSE_TICKS (DISPENSE_INTERVAL*1000/TICK_SLEEP)
 #define DISPENSE_FAIL_TICKS (TIME_TO_DISPENSE_FAIL/TICK_SLEEP)
@@ -126,6 +127,7 @@ void calibrated(Machine_t* m, Events_t e)
                 break;
         case eSW1:
                 send_msg(m->uart, "Dispenser START");
+                write_log("- Weekly log START -");
                 change_state(m, dispense_wait);
                 break;
         }
@@ -154,6 +156,7 @@ void dispense_wait(Machine_t* m, Events_t e)
                 if(m->turn_count >= 7)
                 {
                         send_msg(m->uart, "Dispenser EMPTY");
+                        write_log("- Weekly log END -");
                         change_state(m, standby);
                 }
                 break;
@@ -196,6 +199,7 @@ void dispense_ok(Machine_t* m, Events_t e)
         case eEnter:
                 printf("STATUS: Dispense OK\r\n");
                 send_msg(m->uart, "Dispense OK");
+                write_log("Dispense OK");
                 break;
         case eExit:
                 break;
@@ -212,6 +216,7 @@ void dispense_fail(Machine_t* m, Events_t e)
         case eEnter:
                 printf("STATUS: Dispense FAIL\r\n");
                 send_msg(m->uart, "Dispense FAIL");
+                write_log("Dispense FAILED");
                 m->timer = 0;
                 break;
         case eExit:
