@@ -114,8 +114,14 @@ void re_calibrate(Machine_t* m)
 
         //This is for, if pwr is lost during recalib and we are in the opt_sw "dip" area
         //drive the motor forwards to get out of the dip for recalib so it doesnt do a full circle backwards!!
-        if(!gpio_get(OPT_SW_PIN))
-                drive_steps(m, 512, true);
+
+        absolute_time_t time = make_timeout_time_ms(TIMEOUT_TURN);
+        while(!gpio_get(OPT_SW_PIN))
+        {
+                drive_pins(m, true);
+                if(time_reached(time)) //If stuck in this loop, precaution
+                        return;
+        }
 
         //Drives backwards until the falling edge is found
         int steps_taken = turn_until_opt_fall(m, false);

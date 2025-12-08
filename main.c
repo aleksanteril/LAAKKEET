@@ -5,6 +5,7 @@
 #include "metropolia_board.h"
 #include "states.h"
 #include "io.h"
+#include "logger.h"
 #include "network.h"
 #include "save.h"
 
@@ -41,6 +42,7 @@ int main()
         setup_gpio(LED_D1_PIN, GPIO_OUT);
         setup_gpio(SW0_PIN, GPIO_IN);
         setup_gpio(SW1_PIN, GPIO_IN);
+        setup_gpio(SW2_PIN, GPIO_IN);
         setup_gpio(PIEZO_SW_PIN, GPIO_IN);
 
         //Init motor pins
@@ -63,6 +65,11 @@ int main()
         // Init machine here!
         Machine_t mn = { .uart = uart };
         join_lora_network(mn.uart, 5);
+
+        init_auto_index_log();
+        if(!gpio_get(SW2_PIN))
+                dump_log();
+
 
         //Boot msg to LORA and UART
         printf("PICO: Boot up\r\n");

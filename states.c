@@ -8,6 +8,7 @@
 #include "motor.h"
 #include "network.h"
 #include "save.h"
+#include "logger.h"
 
 #define DISPENSE_TICKS (DISPENSE_INTERVAL*1000/TICK_SLEEP)
 #define DISPENSE_FAIL_TICKS (TIME_TO_DISPENSE_FAIL/TICK_SLEEP)
@@ -85,6 +86,10 @@ void standby(Machine_t* m, Events_t e)
         case eSW0:
                 change_state(m, check_calibration);
                 break;
+        case eSW1:
+                printf("PICO: Erasing log\r\n");
+                erase_log();
+                break;
         }
 }
 
@@ -124,8 +129,9 @@ void calibrated(Machine_t* m, Events_t e)
                 break;
         case eTick:
                 break;
-        case eSW1:
+        case eSW0:
                 send_msg(m->uart, "Dispenser START");
+                write_log("- Weekly log START -");
                 change_state(m, dispense_wait);
                 break;
         }
@@ -198,6 +204,7 @@ void dispense_ok(Machine_t* m, Events_t e)
                 send_msg(m->uart, "Dispense OK");
                 break;
         case eExit:
+                write_log("Dispense OK");
                 break;
         case eTick:
                 change_state(m, dispense_wait);
@@ -216,6 +223,7 @@ void dispense_fail(Machine_t* m, Events_t e)
                 break;
         case eExit:
                 led_off(LED_D1_PIN);
+                write_log("Dispense FAILED");
                 break;
         case eTick:
                 if(++m->timer % 20 == 0)
