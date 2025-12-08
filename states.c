@@ -198,9 +198,9 @@ void dispense_ok(Machine_t* m, Events_t e)
         case eEnter:
                 printf("STATUS: Dispense OK\r\n");
                 send_msg(m->uart, "Dispense OK");
-                write_log("Dispense OK");
                 break;
         case eExit:
+                write_log("Dispense OK");
                 break;
         case eTick:
                 change_state(m, dispense_wait);
@@ -215,11 +215,11 @@ void dispense_fail(Machine_t* m, Events_t e)
         case eEnter:
                 printf("STATUS: Dispense FAIL\r\n");
                 send_msg(m->uart, "Dispense FAIL");
-                write_log("Dispense FAILED");
                 m->timer = 0;
                 break;
         case eExit:
                 led_off(LED_D1_PIN);
+                write_log("Dispense FAILED");
                 break;
         case eTick:
                 if(++m->timer % 20 == 0)
