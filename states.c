@@ -87,6 +87,7 @@ void standby(Machine_t* m, Events_t e)
                 change_state(m, check_calibration);
                 break;
         case eSW1:
+                printf("PICO: Erasing log\r\n");
                 erase_log();
                 break;
         }
