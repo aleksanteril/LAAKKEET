@@ -86,6 +86,9 @@ void standby(Machine_t* m, Events_t e)
         case eSW0:
                 change_state(m, check_calibration);
                 break;
+        case eSW1:
+                erase_log();
+                break;
         }
 }
 
@@ -125,7 +128,7 @@ void calibrated(Machine_t* m, Events_t e)
                 break;
         case eTick:
                 break;
-        case eSW1:
+        case eSW0:
                 send_msg(m->uart, "Dispenser START");
                 write_log("- Weekly log START -");
                 change_state(m, dispense_wait);
