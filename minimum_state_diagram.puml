@@ -5,6 +5,7 @@ STANDBY : eEnter / reset_machine(m), timer = 0;
 STANDBY : eTick [timer % 20 = 0] / led_toggle(); 
 STANDBY : eTick [timer>=600] / send_msg(EMPTY), timer = 0;
 STANDBY : eExit / led_off();
+STANDBY : eSW1 / erase_log();
 STANDBY --> CHECK_CALIBRATION : eSW0 /
 
 [*] -> RECALIBRATE : [If state loaded from EEPROM on boot was DISPENSE_PILL]\n / Recalibrate the spinner.
@@ -30,7 +31,7 @@ note left of CHECK_CALIBRATION : When the button is pressed the dispenser \n is 
 CALIBRATED : eEnter / led_on(); send_msg(CALIBRATED);
 CALIBRATED : eTick /
 CALIBRATED : eExit / led_off();
-CALIBRATED --> DISPENSE_WAIT : eSW1 / send_msg(DISP_START)
+CALIBRATED --> DISPENSE_WAIT : eSW0 / send_msg(DISP_START),\n write_log(DISP_START)
 
 note left of CALIBRATED : After calibration the program keeps \n the LED on until user presses another button.
 
@@ -53,7 +54,7 @@ DISPENSE_PILL --> DISPENSE_FAIL : eTick [timer >= 4] /
 
 DISPENSE_OK : eEnter / send_msg(DISP_OK);
 DISPENSE_OK : eTick /
-DISPENSE_OK : eExit /
+DISPENSE_OK : eExit / write_log(DISP_OK);
 DISPENSE_OK --> DISPENSE_WAIT : eTick /
 
 note left of DISPENSE_PILL : When the wheel is turned, \n the piezo sensor is used to detect \n if a pill was dispensed or not.
@@ -62,6 +63,7 @@ DISPENSE_FAIL : eEnter / timer = 0; send_msg(DISP_FAIL);
 DISPENSE_FAIL : eTick / ++timer;
 DISPENSE_FAIL : eTick [timer % 20 = 0] / led_toggle();
 DISPENSE_FAIL : eExit / led_off();
+DISPENSE_FAIL : eExit / write_log(DISP_FAIL);
 DISPENSE_FAIL --> DISPENSE_WAIT : eTick [timer >= 200] /
 
 note left of DISPENSE_FAIL : If no pill was detected (200ms) the LED blinks 5 times.
